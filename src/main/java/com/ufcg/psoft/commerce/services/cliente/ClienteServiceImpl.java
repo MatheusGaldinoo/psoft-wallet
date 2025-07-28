@@ -18,15 +18,14 @@ public class ClienteServiceImpl implements ClienteService {
 
     @Autowired
     ClienteRepository clienteRepository;
+
     @Autowired
     ModelMapper modelMapper;
 
     @Override
     public ClienteResponseDTO alterar(Long id, String codigoAcesso, ClientePostPutRequestDTO clientePostPutRequestDTO) {
         Cliente cliente = clienteRepository.findById(id).orElseThrow(ClienteNaoExisteException::new);
-        if (!cliente.getCodigo().equals(codigoAcesso)) {
-            throw new CodigoDeAcessoInvalidoException();
-        }
+        validarCodigoAcesso(id, codigoAcesso);
         modelMapper.map(clientePostPutRequestDTO, cliente);
         clienteRepository.save(cliente);
         return modelMapper.map(cliente, ClienteResponseDTO.class);
@@ -42,9 +41,7 @@ public class ClienteServiceImpl implements ClienteService {
     @Override
     public void remover(Long id, String codigoAcesso) {
         Cliente cliente = clienteRepository.findById(id).orElseThrow(ClienteNaoExisteException::new);
-        if (!cliente.getCodigo().equals(codigoAcesso)) {
-            throw new CodigoDeAcessoInvalidoException();
-        }
+        validarCodigoAcesso(id, codigoAcesso);
         clienteRepository.delete(cliente);
     }
 
@@ -68,5 +65,10 @@ public class ClienteServiceImpl implements ClienteService {
     public ClienteResponseDTO recuperar(Long id) {
         Cliente cliente = clienteRepository.findById(id).orElseThrow(ClienteNaoExisteException::new);
         return new ClienteResponseDTO(cliente);
+    }
+
+    private void validarCodigoAcesso(Long id, String codigoAcesso) {
+        Cliente cliente = clienteRepository.findById(id).orElseThrow(ClienteNaoExisteException::new);
+        if (!cliente.getCodigoAcesso().equals(codigoAcesso)) { throw new CodigoDeAcessoInvalidoException(); }
     }
 }

@@ -52,18 +52,18 @@ public class ClienteController {
     @PutMapping("/{id}")
     public ResponseEntity<?> atualizarCliente(
             @PathVariable Long id,
-            @RequestParam String codigo,
+            @RequestParam String codigoAcesso,
             @RequestBody @Valid ClientePostPutRequestDTO clientePostPutRequestDto) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(clienteService.alterar(id, codigo, clientePostPutRequestDto));
+                .body(clienteService.alterar(id, codigoAcesso, clientePostPutRequestDto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> excluirCliente(
             @PathVariable Long id,
-            @RequestParam String codigo) {
-        clienteService.remover(id, codigo);
+            @RequestParam String codigoAcesso) {
+        clienteService.remover(id, codigoAcesso);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .body("");
