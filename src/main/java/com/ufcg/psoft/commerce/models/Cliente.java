@@ -1,34 +1,27 @@
 package com.ufcg.psoft.commerce.models;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ufcg.psoft.commerce.base.Usuario;
+import com.ufcg.psoft.commerce.enums.TipoPlano;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
+import lombok.experimental.SuperBuilder;
 
 @Entity
 @Data
-@Builder
+@SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Cliente {
-
-    @JsonProperty("id")
-    @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
-    private Long id;
-
-    @JsonProperty("nome")
-    @Column(nullable = false)
-    private String nome;
+@EqualsAndHashCode(callSuper = true)
+@DiscriminatorValue("CLIENTE")
+public class Cliente extends Usuario {
 
     @JsonProperty("endereco")
-    @Column(nullable = false)
+    @Column(nullable = true)
     private String endereco;
 
-    @JsonIgnore
+    @JsonProperty("plano")
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private String codigo;
+    private TipoPlano plano;
 }
