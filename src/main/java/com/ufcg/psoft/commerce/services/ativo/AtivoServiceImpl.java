@@ -11,6 +11,10 @@ import com.ufcg.psoft.commerce.models.Cliente;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
+
+import com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
+import com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
+
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -97,5 +101,28 @@ public class AtivoServiceImpl implements AtivoService {
     public AtivoResponseDTO recuperar(Long id) {
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
         return new AtivoResponseDTO(ativo);
+    }
+
+    @Override
+    public AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao, String codigoAcesso) {
+        administradorService.validarCodigoAcesso(codigoAcesso);
+
+        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
+
+        if (ativo.getTipo().getNomeTipo() != TipoAtivo.ACAO && ativo.getTipo().getNomeTipo() != TipoAtivo.CRIPTOMOEDA) {
+            throw new CotacaoNaoPodeSerAtualizadaException();
+        }
+
+        Double cotacaoAtual = ativo.getValor();
+        double variacaoPercentual = Math.abs((novaCotacao - cotacaoAtual) / cotacaoAtual);
+
+        if (variacaoPercentual < 0.01) {
+            throw new VariacaoMinimaDeCotacaoNaoAtingidaException();
+        }
+
+        ativo.setValor(novaCotacao);
+        ativoRepository.save(ativo);
+
+        return modelMapper.map(ativo, AtivoResponseDTO.class);
     }
 }

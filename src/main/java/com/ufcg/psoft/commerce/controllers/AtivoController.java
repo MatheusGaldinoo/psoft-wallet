@@ -71,4 +71,14 @@ public class AtivoController {
                 .status(HttpStatus.NO_CONTENT)
                 .body("");
     }
+
+    @PatchMapping("/{id}/cotacao")
+    public ResponseEntity<?> atualizarCotacaoDoAtivo(
+            @PathVariable Long id,
+            @RequestParam Double novaCotacao,
+            @RequestParam String codigoAcesso) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ativoService.atualizarCotacao(id, novaCotacao, codigoAcesso));
+    }
 }

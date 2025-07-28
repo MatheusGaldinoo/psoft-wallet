@@ -402,6 +402,90 @@ public class AtivoControllerTests {
     }
 
     @Nested
+    @DisplayName("Testes para atualização da cotação do ativo")
+    class AtualizacaoCotacao {
+
+        @Test
+        @DisplayName("Quando o código de acesso do administrador for inválido")
+        void codigoAcessoInvalido() throws Exception {
+
+            Ativo ativo =  ativos.get(0);
+            driver.perform(patch(URI_BASE + "/" + ativo.getId() + "/cotacao")
+                            .param("novaCotacao", "180.0")
+                            .param("codigoAcesso", "codigoErrado")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Codigo de acesso invalido!")));
+        }
+
+        @Test
+        @DisplayName("Quando o ativo não for encontrado")
+        void ativoNaoEncontrado() throws Exception {
+            driver.perform(patch(URI_BASE + "/1234/cotacao")
+                            .param("novaCotacao", "200.0")
+                            .param("codigoAcesso", "123456")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
+        }
+
+        @Test
+        @DisplayName("Quando o tipo do ativo não permitir atualização de cotação")
+        void tipoAtivoNaoPermiteAtualizacao() throws Exception {
+
+            Ativo ativo =  ativos.get(0);
+
+            driver.perform(patch(URI_BASE + "/" + ativo.getId() + "/cotacao")
+                            .param("novaCotacao", "180.0")
+                            .param("codigoAcesso", "123456")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Somente ativos do tipo Ação ou Criptomoeda podem ter a cotação atualizada!")));
+        }
+
+        @Test
+        @DisplayName("Quando a nova cotação variar menos que 1% em relação à atual")
+        void cotacaoAbaixoDoMinimoPermitido() throws Exception {
+
+            Ativo ativo =  ativos.get(1);
+
+            driver.perform(patch(URI_BASE + "/" + ativo.getId() + "/cotacao")
+                            .param("novaCotacao", "50000.5") // menos que 1%
+                            .param("codigoAcesso", "123456")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("A variação da cotação deve ser de no mínimo 1%.")));
+        }
+
+        @Test
+        @DisplayName("Quando a cotação for atualizada com sucesso")
+        void atualizacaoCotacaoSucesso() throws Exception {
+
+            Ativo ativo =  ativos.get(1);
+
+            String responseJsonString = driver.perform(patch(URI_BASE + "/" + ativo.getId() + "/cotacao")
+                            .param("novaCotacao", "110.0")
+                            .param("codigoAcesso", "123456")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, AtivoResponseDTO.class);
+
+            assertAll(
+                    () -> assertEquals(ativo.getId(), resultado.getId()),
+                    () -> assertEquals(110.0, resultado.getValor()),
+                    () -> assertEquals(ativo.getNome(), resultado.getNome())
+            );
+        }
+    }
+
+    @Nested
     @DisplayName("Testes para atualização do Status de Disponibilidade")
     class AtualizarStatusDisponibilidade {
 
@@ -473,4 +557,5 @@ public class AtivoControllerTests {
             assertEquals(ativoRetornado.getStatusDisponibilidade(), StatusDisponibilidade.DISPONIVEL);
         }
     }
+
 }

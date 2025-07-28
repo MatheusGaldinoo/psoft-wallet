@@ -21,4 +21,6 @@ public interface AtivoService {
     AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso);
 
     void remover(Long id, String codigoAcesso);
+
+    AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao, String codigoAcesso);
 }
