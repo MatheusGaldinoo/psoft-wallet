@@ -12,8 +12,8 @@ import com.ufcg.psoft.commerce.repositories.AtivoRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
 
-import main.java.com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
-import main.java.com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
+import com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
+import com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
