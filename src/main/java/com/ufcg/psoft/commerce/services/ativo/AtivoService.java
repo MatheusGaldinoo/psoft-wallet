@@ -10,6 +10,8 @@ public interface AtivoService {
 
     AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso);
 
+    AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso);
+
     List<AtivoResponseDTO> listarTodos();
 
     List<AtivoResponseDTO> listarFiltrandoPorTipo(List<TipoAtivo> tiposParaFiltrar);
