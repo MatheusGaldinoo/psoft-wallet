@@ -400,4 +400,77 @@ public class AtivoControllerTests {
                     .andDo(print());
         }
     }
+
+    @Nested
+    @DisplayName("Testes para atualização do Status de Disponibilidade")
+    class AtualizarStatusDisponibilidade {
+
+        @Test
+        @DisplayName("Quando o código de acesso do administrador for inválido")
+        void codigoAcessoInvalido() throws Exception {
+
+            Ativo ativo =  ativos.get(0);
+            driver.perform(patch(URI_BASE + "/" + ativo.getId())
+                            .param("codigoAcesso", "codigoErrado")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Codigo de acesso invalido!")));
+        }
+
+        @Test
+        @DisplayName("Quando o ativo não for encontrado")
+        void ativoNaoEncontrado() throws Exception {
+            driver.perform(patch(URI_BASE + "/1234")
+                            .param("codigoAcesso", "123456")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
+        }
+
+        @Test
+        @DisplayName("Quando indisponibilizamos o ativo")
+        void quandoIndisponibilizamosOAtivo() throws Exception {
+
+            criarAtivo("AtivoAtivo", tesouro, 100, StatusDisponibilidade.DISPONIVEL);
+            Ativo ativo = ativos.get(ativos.size() - 1);
+
+            String responseJsonString = driver.perform(patch(URI_BASE + "/" + ativo.getId())
+                            .param("codigoAcesso", "123456")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            AtivoResponseDTO ativoRetornado = objectMapper.readValue(
+                    responseJsonString,
+                    new TypeReference<AtivoResponseDTO>() {}
+            );
+
+            assertEquals(ativoRetornado.getStatusDisponibilidade(), StatusDisponibilidade.INDISPONIVEL);
+        }
+
+        @Test
+        @DisplayName("Quando disponibilizamos o ativo")
+        void quandoDisponibilizamosOAtivo() throws Exception {
+
+            criarAtivo("AtivoInativo", tesouro, 100, StatusDisponibilidade.INDISPONIVEL);
+            Ativo ativo = ativos.get(ativos.size() - 1);
+
+            String responseJsonString = driver.perform(patch(URI_BASE + "/" + ativo.getId())
+                            .param("codigoAcesso", "123456")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            AtivoResponseDTO ativoRetornado = objectMapper.readValue(
+                    responseJsonString,
+                    new TypeReference<AtivoResponseDTO>() {}
+            );
+
+            assertEquals(ativoRetornado.getStatusDisponibilidade(), StatusDisponibilidade.DISPONIVEL);
+        }
+    }
 }

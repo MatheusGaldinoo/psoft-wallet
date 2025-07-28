@@ -63,6 +63,18 @@ public class AtivoServiceImpl implements AtivoService {
     }
 
     @Override
+    public AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso) {
+        administradorService.validarCodigoAcesso(codigoAcesso);
+        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
+        if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.INDISPONIVEL) {
+            ativo.setStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
+        } else {
+            ativo.setStatusDisponibilidade(StatusDisponibilidade.INDISPONIVEL);
+        }
+        return modelMapper.map(ativo, AtivoResponseDTO.class);
+    }
+
+    @Override
     public List<AtivoResponseDTO> listarTodos() {
         List<Ativo> ativos = ativoRepository.findAll();
         return ativos.stream().map(AtivoResponseDTO::new).collect(Collectors.toList());
