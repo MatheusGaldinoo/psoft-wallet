@@ -36,17 +36,16 @@ public class AtivoServiceImpl implements AtivoService {
     ModelMapper modelMapper;
 
     @Override
-    public AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
+
+    public AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO) {
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
         modelMapper.map(ativoPostPutRequestDTO, ativo);
         return modelMapper.map(ativo, AtivoResponseDTO.class);
     }
 
     @Override
-    public AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso) {
+    public AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO) {
 
-        administradorService.validarCodigoAcesso(codigoAcesso);
         List<TipoDeAtivo> tiposDeAtivo = tipoDeAtivoRepository.findAll();
         TipoDeAtivo tipo = tiposDeAtivo.stream()
                 .filter((t) -> t.getNomeTipo() == ativoPostPutRequestDTO.getTipo())
@@ -124,5 +123,12 @@ public class AtivoServiceImpl implements AtivoService {
         ativoRepository.save(ativo);
 
         return modelMapper.map(ativo, AtivoResponseDTO.class);
+    }
+
+    @Override
+    public void adicionarInteressado(Long idAtivo, Long idCliente)  {
+        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
+
+        ativo.addInteressado(idCliente);
     }
 }

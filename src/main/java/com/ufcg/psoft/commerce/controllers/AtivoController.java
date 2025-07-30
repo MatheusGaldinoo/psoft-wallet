@@ -19,6 +19,7 @@ public class AtivoController {
     @Autowired
     private AtivoService ativoService;
 
+
     @GetMapping("")
     public ResponseEntity<?> listarAtivos() {
         return ResponseEntity
