@@ -39,6 +39,15 @@ public class AtivoClienteController {
                 .body(ativoClienteService.alterar(id, ativoPostPutRequestDto, codigoAcesso));
     }
 
+    @PatchMapping("/{id}/ativar-desativar")
+    public ResponseEntity<?> ativarOuDesativarAtivo(
+            @PathVariable Long id,
+            @RequestParam String codigoAcesso) {
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ativoClienteService.ativarOuDesativar(id, codigoAcesso));
+    }
+
     @GetMapping("/{id}/ativos-disponiveis")
     public ResponseEntity<?> recuperarAtivo(
             @PathVariable Long id) {

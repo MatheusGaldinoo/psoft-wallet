@@ -66,8 +66,8 @@ public class AtivoServiceImpl implements AtivoService {
     }
 
     @Override
-    public AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
+    public AtivoResponseDTO ativarOuDesativar(Long id) {
+
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
         if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.INDISPONIVEL) {
             ativo.setStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);

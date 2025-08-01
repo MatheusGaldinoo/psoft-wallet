@@ -20,9 +20,9 @@ public interface AtivoClienteService {
 
     void remover(Long id, String codigoAcesso);
 
-    AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso);
-
     AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao, String codigoAcesso);
 
     void adicionarInteressado(Long idAtivo, Long idCliente);
+
+    AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso);
 }

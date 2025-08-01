@@ -97,18 +97,6 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
     }
 
     @Override
-    public AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
-        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
-        if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.INDISPONIVEL) {
-            ativo.setStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
-        } else {
-            ativo.setStatusDisponibilidade(StatusDisponibilidade.INDISPONIVEL);
-        }
-        return modelMapper.map(ativo, AtivoResponseDTO.class);
-    }
-
-    @Override
     public AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao, String codigoAcesso) {
 
         AtivoResponseDTO ativo = ativoService.recuperar(id);
@@ -126,13 +114,24 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
 
         AtivoPostPutRequestDTO ativoModificado = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
         ativoModificado.setValor(novaCotacao);
-        ativoService.alterar(id, ativoModificado, codigoAcesso);
 
-        return modelMapper.map(ativoModificado, AtivoResponseDTO.class);
+        return ativoService.alterar(id, ativoModificado);
     }
 
     @Override
     public void adicionarInteressado(Long idAtivo, Long idCliente)  {
         ativoService.adicionarInteressado(idAtivo, idCliente);
+    }
+
+    @Override
+    public AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso) {
+        administradorService.validarCodigoAcesso(codigoAcesso);
+        return ativoService.ativarOuDesativar(id);
+    };
+
+    @Override
+    public void remover(Long id, String codigoAcesso) {
+        administradorService.validarCodigoAcesso(codigoAcesso);
+        ativoService.remover(id);
     }
 }
