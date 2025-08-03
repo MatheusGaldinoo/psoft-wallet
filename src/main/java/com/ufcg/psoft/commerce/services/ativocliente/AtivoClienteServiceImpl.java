@@ -3,15 +3,14 @@ package com.ufcg.psoft.commerce.services.ativocliente;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
-import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
-import com.ufcg.psoft.commerce.exceptions.AtivoNaoExisteException;
 import com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
 import com.ufcg.psoft.commerce.exceptions.ServicoNaoDisponivelParaPlanoException;
 import com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
-import com.ufcg.psoft.commerce.models.Ativo;
+import com.ufcg.psoft.commerce.loggers.Logger;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
+import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
 import com.ufcg.psoft.commerce.services.ativo.AtivoService;
 import com.ufcg.psoft.commerce.services.cliente.ClienteService;
@@ -59,7 +58,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
     }
 
     @Override
-    public List<AtivoResponseDTO> marcarInteresseAtivo(Long idCliente, Long idAtivo) throws ServicoNaoDisponivelParaPlanoException {
+    public void adicionarInteressado(Long idCliente, Long idAtivo) throws ServicoNaoDisponivelParaPlanoException {
 
        ClienteResponseDTO cliente = clienteService.recuperar(idCliente);
 
@@ -90,37 +89,25 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
     }
 
     @Override
-    public void remover(Long id, String codigoAcesso) {
+    public AtivoResponseDTO atualizarCotacao(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso) {
+
         administradorService.validarCodigoAcesso(codigoAcesso);
-        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
-        ativoRepository.delete(ativo);
-    }
+        Double novaCotacao = ativoPostPutRequestDTO.getValor();
+        Double variacaoPercentual = Math.abs((ativoPostPutRequestDTO.getValor() - novaCotacao) / novaCotacao) * 100;
 
-    @Override
-    public AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao, String codigoAcesso) {
-
-        AtivoResponseDTO ativo = ativoService.recuperar(id);
-
-        if (ativo.getTipo().getNomeTipo() != TipoAtivo.ACAO && ativo.getTipo().getNomeTipo() != TipoAtivo.CRIPTOMOEDA) {
-            throw new CotacaoNaoPodeSerAtualizadaException();
+        if (variacaoPercentual >= 0.10) {
+            List<Long> interessados = ativoService.recuperarInteressados(id);
+            for (Long idInteressado : interessados) {
+                ClienteResponseDTO cliente = clienteService.recuperar(idInteressado);
+                Logger.alertUser(cliente.getNome(),
+                        String.format("User: %s\nMessage: Ativo %s variou de cotação em %.2f%%",
+                                    ativoPostPutRequestDTO.getNome(),
+                                    variacaoPercentual));
+            }
         }
 
-        Double cotacaoAtual = ativo.getValor();
-        double variacaoPercentual = Math.abs((novaCotacao - cotacaoAtual) / cotacaoAtual);
+        return ativoService.atualizarCotacao(id, novaCotacao);
 
-        if (variacaoPercentual < 0.01) {
-            throw new VariacaoMinimaDeCotacaoNaoAtingidaException();
-        }
-
-        AtivoPostPutRequestDTO ativoModificado = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-        ativoModificado.setValor(novaCotacao);
-
-        return ativoService.alterar(id, ativoModificado);
-    }
-
-    @Override
-    public void adicionarInteressado(Long idAtivo, Long idCliente)  {
-        ativoService.adicionarInteressado(idAtivo, idCliente);
     }
 
     @Override

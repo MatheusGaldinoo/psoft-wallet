@@ -20,9 +20,11 @@ public interface AtivoService {
 
     AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO);
 
-    void remover(Long id, String codigoAcesso);
+    void remover(Long id);
 
-    AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao, String codigoAcesso);
+    List<Long> recuperarInteressados(Long id);
+
+    AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao);
 
     void adicionarInteressado(Long idAtivo, Long idCliente);
 }

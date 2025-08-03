@@ -10,6 +10,8 @@ import jakarta.persistence.DiscriminatorValue;
 @DiscriminatorValue("TESOURO_DIRETO")
 public class TesouroDireto extends TipoDeAtivo {
 
+    public TesouroDireto() {}
+
     public Double calcularDesconto(){
         return 0.0;
     }

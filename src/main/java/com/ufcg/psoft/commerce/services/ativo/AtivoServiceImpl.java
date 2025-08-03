@@ -7,7 +7,6 @@ import com.ufcg.psoft.commerce.exceptions.AtivoNaoExisteException;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.models.Ativo;
-import com.ufcg.psoft.commerce.models.Cliente;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
@@ -59,8 +58,7 @@ public class AtivoServiceImpl implements AtivoService {
     }
 
     @Override
-    public void remover(Long id, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
+    public void remover(Long id) {
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
         ativoRepository.delete(ativo);
     }
@@ -103,8 +101,14 @@ public class AtivoServiceImpl implements AtivoService {
     }
 
     @Override
-    public AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
+    public List<Long> recuperarInteressados(Long id) {
+        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
+        return ativo.getInteressados();
+    }
+
+
+    @Override
+    public AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao) {
 
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
 
@@ -119,6 +123,7 @@ public class AtivoServiceImpl implements AtivoService {
             throw new VariacaoMinimaDeCotacaoNaoAtingidaException();
         }
 
+
         ativo.setValor(novaCotacao);
         ativoRepository.save(ativo);
 
@@ -127,8 +132,8 @@ public class AtivoServiceImpl implements AtivoService {
 
     @Override
     public void adicionarInteressado(Long idAtivo, Long idCliente)  {
-        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
 
+        Ativo ativo = ativoRepository.findById(idAtivo).orElseThrow(AtivoNaoExisteException::new);
         ativo.addInteressado(idCliente);
     }
 }
