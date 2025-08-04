@@ -3,12 +3,14 @@ package com.ufcg.psoft.commerce.services.ativocliente;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
+import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
 import com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
 import com.ufcg.psoft.commerce.exceptions.ServicoNaoDisponivelParaPlanoException;
 import com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
 import com.ufcg.psoft.commerce.loggers.Logger;
+import com.ufcg.psoft.commerce.repositories.ClienteRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
@@ -113,8 +115,29 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
     @Override
     public AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso) {
         administradorService.validarCodigoAcesso(codigoAcesso);
-        return ativoService.ativarOuDesativar(id);
-    };
+
+        AtivoResponseDTO ativoAtualizado = ativoService.ativarOuDesativar(id);
+
+        if (ativoAtualizado.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL){
+            List<Long> interessados = ativoService.recuperarInteressados(id);
+
+            if (!interessados.isEmpty()) {
+                StringBuilder out = new StringBuilder("Notificação para:\n");
+
+                for (Long idInteressado : interessados) {
+                    ClienteResponseDTO cliente = clienteService.recuperar(idInteressado);
+                    out.append(cliente.getNome()).append("\n");
+                }
+
+                out.append("O ativo '").append(ativoAtualizado.getNome())
+                        .append("' agora está disponível para compra!\n");
+
+                ativoService.limparInteressados(id);
+                System.out.println(out.toString());
+            }
+        }
+        return ativoAtualizado;
+    }
 
     @Override
     public void remover(Long id, String codigoAcesso) {
