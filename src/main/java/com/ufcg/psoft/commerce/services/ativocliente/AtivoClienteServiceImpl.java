@@ -121,4 +121,14 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         administradorService.validarCodigoAcesso(codigoAcesso);
         ativoService.remover(id);
     }
+
+    @Override
+    public AtivoResponseDTO visualizarAtivo(Long idCliente, Long idAtivo){
+
+        ClienteResponseDTO cliente = clienteService.recuperar(idCliente);
+        AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
+
+        return ativo;
+    }
+
 }
