@@ -118,7 +118,13 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
 
         AtivoResponseDTO ativoAtualizado = ativoService.ativarOuDesativar(id);
 
-        if (ativoAtualizado.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL){
+        notificarInteressados(ativoAtualizado, id);
+
+        return ativoAtualizado;
+    }
+
+    private void notificarInteressados(AtivoResponseDTO ativo, Long id){
+        if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL){
             List<Long> interessados = ativoService.recuperarInteressados(id);
 
             if (!interessados.isEmpty()) {
@@ -129,14 +135,12 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
                     out.append(cliente.getNome()).append("\n");
                 }
 
-                out.append("O ativo '").append(ativoAtualizado.getNome())
+                out.append("O ativo '").append(ativo.getNome())
                         .append("' agora está disponível para compra!\n");
 
-                ativoService.limparInteressados(id);
                 System.out.println(out.toString());
             }
         }
-        return ativoAtualizado;
     }
 
     @Override

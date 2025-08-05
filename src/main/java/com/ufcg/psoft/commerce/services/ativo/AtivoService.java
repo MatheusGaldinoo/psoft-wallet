@@ -12,8 +12,6 @@ public interface AtivoService {
 
     AtivoResponseDTO ativarOuDesativar(Long id);
 
-    void limparInteressados(Long id);
-
     List<AtivoResponseDTO> listarTodos();
 
     List<AtivoResponseDTO> listarFiltrandoPorTipo(List<TipoAtivo> tiposParaFiltrar);

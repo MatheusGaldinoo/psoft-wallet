@@ -77,13 +77,6 @@ public class AtivoServiceImpl implements AtivoService {
     }
 
     @Override
-    public void limparInteressados(Long id) {
-        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
-        ativo.getInteressados().clear();
-        ativoRepository.save(ativo);
-    }
-
-    @Override
     public List<AtivoResponseDTO> listarTodos() {
         List<Ativo> ativos = ativoRepository.findAll();
         return ativos.stream().map(AtivoResponseDTO::new).collect(Collectors.toList());
