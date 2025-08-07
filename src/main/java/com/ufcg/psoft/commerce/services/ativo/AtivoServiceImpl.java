@@ -39,7 +39,7 @@ public class AtivoServiceImpl implements AtivoService {
     public AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO) {
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
         modelMapper.map(ativoPostPutRequestDTO, ativo);
-        // ativoRepository.save(ativo); // estava faltando fazer esse save após as modificações do Ativo
+        ativoRepository.save(ativo);
         return modelMapper.map(ativo, AtivoResponseDTO.class);
     }
 
@@ -66,13 +66,15 @@ public class AtivoServiceImpl implements AtivoService {
 
     @Override
     public AtivoResponseDTO ativarOuDesativar(Long id) {
-
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
+
         if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.INDISPONIVEL) {
             ativo.setStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
         } else {
             ativo.setStatusDisponibilidade(StatusDisponibilidade.INDISPONIVEL);
         }
+
+        ativoRepository.save(ativo);
         return modelMapper.map(ativo, AtivoResponseDTO.class);
     }
 
