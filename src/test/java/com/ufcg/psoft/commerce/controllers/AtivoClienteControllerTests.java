@@ -6,9 +6,12 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
+import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
+import com.ufcg.psoft.commerce.exceptions.CustomErrorType;
+import com.ufcg.psoft.commerce.exceptions.ErrorHandlingControllerAdvice;
 import com.ufcg.psoft.commerce.models.*;
 import com.ufcg.psoft.commerce.repositories.AdministradorRepository;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
@@ -21,6 +24,7 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
@@ -662,6 +666,260 @@ public class AtivoClienteControllerTests {
 
             Ativo ativoAtualizado = ativoRepository.findById(ativo.getId()).orElseThrow(Exception::new);
             assertEquals(1, ativoAtualizado.getInteressados().size());
+
+        }
+
+    }
+
+    //US08
+    @Nested
+    @Import(ErrorHandlingControllerAdvice.class)
+    @DisplayName("Testes para verificar funcionalidade de visualizar ativo")
+    class visualizarAtivo{
+
+        @Test
+        @DisplayName("Cliente Plano normal visualizar ativo com sucesso!")
+        void clientePlanoNormalVisualizaAtivoTesouroDireto() throws Exception {
+
+            //Normal
+            Cliente cliente = clientes.get(1);
+
+            //Tesouro_Direto
+            Ativo ativo = ativos.get(1);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = ativosPostPutRequestDTO.get(1);
+
+            // Act
+            String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
+                            "/visualizar-ativo/" + ativo.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
+                    .andExpect(status().isOk()) // Codigo 200
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, new TypeReference<>() {});
+
+            assertAll(
+                    () -> assertEquals(resultado.getId().longValue(), ativo.getId()),
+                    () -> assertEquals(resultado.getNome(), ativo.getNome()),
+                    () -> assertEquals(resultado.getTipo(), ativo.getTipo()),
+                    () -> assertEquals(resultado.getValor(), ativo.getValor()),
+                    () -> assertEquals(resultado.getDescricao(), ativo.getDescricao()),
+                    () -> assertEquals(resultado.getStatusDisponibilidade(), ativo.getStatusDisponibilidade())
+            );
+
+        }
+
+        @Test
+        @DisplayName("Cliente Plano normal não visualizar ativo AÇÃO!")
+        void clientePlanoNormalNaoVisualizaAtivoAcao() throws Exception {
+
+            //Normal
+            Cliente cliente = clientes.get(1);
+
+            //Ação
+            Ativo ativo = ativos.get(8);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = ativosPostPutRequestDTO.get(8);
+
+            // Act
+            String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
+                            "/visualizar-ativo/" + ativo.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
+                    .andExpect(status().isForbidden()) // Codigo 403
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
+
+            // Assert
+            assertAll(
+                    () -> assertEquals("Plano do cliente nao permite marcar interesse!", resultado.getMessage())
+            );
+
+        }
+
+        @Test
+        @DisplayName("Cliente Plano normal não visualizar ativo Criptomoeda!")
+        void clientePlanoNormalNaoVisualizaAtivoCriptomoeda() throws Exception {
+
+            //Normal
+            Cliente cliente = clientes.get(1);
+
+            //Criptomoeda
+            Ativo ativo = ativos.get(3);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = ativosPostPutRequestDTO.get(8);
+
+            // Act
+            String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
+                            "/visualizar-ativo/" + ativo.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
+                    .andExpect(status().isForbidden()) // Codigo 403
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
+
+            // Assert
+            assertAll(
+                    () -> assertEquals("Plano do cliente nao permite marcar interesse!", resultado.getMessage())
+            );
+
+        }
+
+        @Test
+        @DisplayName("Cliente Plano premium visualizar ativo Tesouro Direto com sucesso!")
+        void clientePlanoPremiumVisualizaAtivoTesouroDireto() throws Exception {
+
+            //Premium
+            Cliente cliente = clientes.get(0);
+
+            //Tesouro_Direto
+            Ativo ativo = ativos.get(1);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = ativosPostPutRequestDTO.get(1);
+
+            // Act
+            String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
+                            "/visualizar-ativo/" + ativo.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
+                    .andExpect(status().isOk()) // Codigo 200
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, new TypeReference<>() {});
+
+            assertAll(
+                    () -> assertEquals(resultado.getId().longValue(), ativo.getId()),
+                    () -> assertEquals(resultado.getNome(), ativo.getNome()),
+                    () -> assertEquals(resultado.getTipo(), ativo.getTipo()),
+                    () -> assertEquals(resultado.getValor(), ativo.getValor()),
+                    () -> assertEquals(resultado.getDescricao(), ativo.getDescricao()),
+                    () -> assertEquals(resultado.getStatusDisponibilidade(), ativo.getStatusDisponibilidade())
+            );
+
+        }
+
+        @Test
+        @DisplayName("Cliente Plano premium visualizar ativo Ação com sucesso!")
+        void clientePlanoPremiumVisualizaAtivoAcao() throws Exception {
+
+            //Premium
+            Cliente cliente = clientes.get(0);
+
+            //Ação
+            Ativo ativo = ativos.get(8);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = ativosPostPutRequestDTO.get(1);
+
+            // Act
+            String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
+                            "/visualizar-ativo/" + ativo.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
+                    .andExpect(status().isOk()) // Codigo 200
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, new TypeReference<>() {});
+
+            assertAll(
+                    () -> assertEquals(resultado.getId().longValue(), ativo.getId()),
+                    () -> assertEquals(resultado.getNome(), ativo.getNome()),
+                    () -> assertEquals(resultado.getTipo(), ativo.getTipo()),
+                    () -> assertEquals(resultado.getValor(), ativo.getValor()),
+                    () -> assertEquals(resultado.getDescricao(), ativo.getDescricao()),
+                    () -> assertEquals(resultado.getStatusDisponibilidade(), ativo.getStatusDisponibilidade())
+            );
+
+        }
+
+        @Test
+        @DisplayName("Cliente Plano premium visualizar ativo Criptomoeda com sucesso!")
+        void clientePlanoPremiumVisualizaAtivoCriptomoeda() throws Exception {
+
+            //Premium
+            Cliente cliente = clientes.get(0);
+
+            //Criptomoeda
+            Ativo ativo = ativos.get(3);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = ativosPostPutRequestDTO.get(1);
+
+            // Act
+            String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
+                            "/visualizar-ativo/" + ativo.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
+                    .andExpect(status().isOk()) // Codigo 200
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, new TypeReference<>() {});
+
+            assertAll(
+                    () -> assertEquals(resultado.getId().longValue(), ativo.getId()),
+                    () -> assertEquals(resultado.getNome(), ativo.getNome()),
+                    () -> assertEquals(resultado.getTipo(), ativo.getTipo()),
+                    () -> assertEquals(resultado.getValor(), ativo.getValor()),
+                    () -> assertEquals(resultado.getDescricao(), ativo.getDescricao()),
+                    () -> assertEquals(resultado.getStatusDisponibilidade(), ativo.getStatusDisponibilidade())
+            );
+
+        }
+
+        @Test
+        @DisplayName("Id do Cliente é inválido!")
+        void visualizarAtivoIdClienteInvalido() throws Exception {
+
+            //Criptomoeda
+            Ativo ativo = ativos.get(3);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = ativosPostPutRequestDTO.get(8);
+
+            // Act
+            String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + 5 +
+                            "/visualizar-ativo/" + ativo.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
+                    .andExpect(status().isBadRequest()) // Codigo 400
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
+
+            // Assert
+            assertEquals("O cliente consultado nao existe!", resultado.getMessage());
+
+        }
+
+        @Test
+        @DisplayName("Id do ativo é inválido!")
+        void visualizarAtivoIdAtivoInvalido() throws Exception {
+
+            //Normal
+            Cliente cliente = clientes.get(0);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = ativosPostPutRequestDTO.get(8);
+
+            // Act
+            String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
+                            "/visualizar-ativo/" + 11)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
+                    .andExpect(status().isBadRequest()) // Codigo 400
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
+
+            // Assert
+            assertEquals("O ativo consultado nao existe!", resultado.getMessage());
 
         }
 
