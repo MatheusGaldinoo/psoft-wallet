@@ -63,7 +63,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
        ClienteResponseDTO cliente = clienteService.recuperar(idCliente);
 
        if (cliente.getPlano() == TipoPlano.NORMAL) {
-           throw new ServicoNaoDisponivelParaPlanoException("Plano do cliente não permite marcar interesse!");
+           throw new ServicoNaoDisponivelParaPlanoException("Plano do cliente nao permite marcar interesse!");
        }
 
        ativoService.adicionarInteressado(idAtivo, idCliente);
