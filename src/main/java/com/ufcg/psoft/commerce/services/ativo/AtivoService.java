@@ -24,6 +24,8 @@ public interface AtivoService {
 
     List<Long> recuperarInteressados(Long id);
 
+    void limparInteressados(Long id);
+
     AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao);
 
     void adicionarInteressado(Long idAtivo, Long idCliente);

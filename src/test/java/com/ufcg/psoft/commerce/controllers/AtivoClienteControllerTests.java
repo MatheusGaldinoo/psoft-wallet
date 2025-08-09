@@ -1,4 +1,4 @@
- package com.ufcg.psoft.commerce.controllers;
+package com.ufcg.psoft.commerce.controllers;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -23,10 +23,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.bind.annotation.PatchMapping;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -663,6 +663,95 @@ public class AtivoClienteControllerTests {
             Ativo ativoAtualizado = ativoRepository.findById(ativo.getId()).orElseThrow(Exception::new);
             assertEquals(1, ativoAtualizado.getInteressados().size());
 
+        }
+    }
+
+    @Nested
+    @DisplayName("Testes de notificação de interessados")
+    class NotificacaoInteressados {
+
+        private final PrintStream originalOut = System.out;
+        private ByteArrayOutputStream outContent;
+
+        Ativo ativoComInteressados;
+        Ativo ativoSemInteressados;
+        Cliente cliente;
+
+        @BeforeEach
+        void setUp() {
+            outContent = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(outContent));
+
+            ativoComInteressados = ativos.get(0);
+            ativoSemInteressados = ativos.get(1);
+            cliente = clientes.get(0);
+
+            ativoComInteressados.getInteressados().add(cliente.getId());
+            ativoComInteressados.setStatusDisponibilidade(StatusDisponibilidade.INDISPONIVEL);
+            ativoRepository.save(ativoComInteressados);
+
+            ativoSemInteressados.setStatusDisponibilidade(StatusDisponibilidade.INDISPONIVEL);
+            ativoRepository.save(ativoSemInteressados);
+        }
+
+        @AfterEach
+        void tearDown() {
+            System.setOut(originalOut);
+        }
+
+        private String ativarAtivo(Long idUser, Long idAtivo, boolean imprimir) throws Exception {
+            var perform = driver.perform(patch("/usuario/" + idUser + "/ativar-desativar/" + idAtivo)
+                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                    .contentType(MediaType.APPLICATION_JSON));
+
+            if (imprimir) {
+                perform.andDo(print());
+            }
+
+            perform.andExpect(status().isOk());
+
+            return outContent.toString();
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Deve imprimir notificação para interessados quando ativo fica disponível e limpar a lista")
+        void deveImprimirNotificacaoParaInteressadosELimparAListaParaNotificarUnicaVez() throws Exception {
+            String output = ativarAtivo(ativoComInteressados.getId(), ativoComInteressados.getId(), true);
+
+            assertTrue(output.contains(cliente.getNome()), "Deve conter o nome do cliente na notificação");
+            assertTrue(output.contains(ativoComInteressados.getNome()), "Deve conter o nome do ativo na notificação");
+            assertTrue(output.contains("disponível"), "Deve indicar que o ativo está disponível");
+            assertEquals(0, ativoComInteressados.getInteressados().size());
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Não deve imprimir nada se não houver interessados")
+        void naoDeveImprimirNotificacaoSemInteressados() throws Exception {
+            String output = ativarAtivo(cliente.getId(), ativoSemInteressados.getId(), false);
+
+            assertFalse(output.contains("Notificação para:"), "Não deve imprimir notificação quando não há interessados");
+            assertEquals(0, ativoSemInteressados.getInteressados().size());
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Não deve imprimir notificação nem limpar interessados ao desativar ativo")
+        void naoDeveNotificarNemLimparAoDesativarAtivo() throws Exception {
+            ativoComInteressados.setStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
+            ativoRepository.save(ativoComInteressados);
+
+            assertEquals(1, ativoComInteressados.getInteressados().size(), "Lista de interessados deve continuar intacta ao desativar");
+
+            var perform = driver.perform(patch("/usuario/" + ativoComInteressados.getId() + "/ativar-desativar/" + ativoComInteressados.getId())
+                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                    .contentType(MediaType.APPLICATION_JSON));
+
+            perform.andExpect(status().isOk());
+
+            Ativo ativoAtualizado = ativoRepository.findById(ativoComInteressados.getId()).orElseThrow();
+            assertEquals(1, ativoAtualizado.getInteressados().size(), "Lista de interessados deve continuar intacta ao desativar");
         }
 
         @Test
