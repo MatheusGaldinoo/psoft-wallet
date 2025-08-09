@@ -752,6 +752,7 @@ public class AtivoClienteControllerTests {
 
             Ativo ativoAtualizado = ativoRepository.findById(ativoComInteressados.getId()).orElseThrow();
             assertEquals(1, ativoAtualizado.getInteressados().size(), "Lista de interessados deve continuar intacta ao desativar");
+        }
 
         @Test
         @Transactional
