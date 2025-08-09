@@ -26,9 +26,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.bind.annotation.PatchMapping;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -107,7 +105,7 @@ public class AtivoClienteControllerTests {
 
         for (int i = 1; i <= 3; i++) {
             criarAtivo("Ativo" + i, tesouro, 1.0 * i, StatusDisponibilidade.DISPONIVEL);
-            criarCliente("Cliente" + i, (i%2 == 0 ? TipoPlano.NORMAL : TipoPlano.PREMIUM));
+            criarCliente("Cliente" + i, (i % 2 == 0 ? TipoPlano.NORMAL : TipoPlano.PREMIUM));
         }
         for (int i = 4; i <= 7; i++) {
             criarAtivo("Ativo" + i, cripto, 1.0 * i, StatusDisponibilidade.DISPONIVEL);
@@ -371,7 +369,8 @@ public class AtivoClienteControllerTests {
 
             List<AtivoResponseDTO> ativosRetornados = objectMapper.readValue(
                     responseJsonString,
-                    new TypeReference<List<AtivoResponseDTO>>() {}
+                    new TypeReference<List<AtivoResponseDTO>>() {
+                    }
             );
 
             assertEquals(ativos.size(), ativosRetornados.size());
@@ -395,7 +394,8 @@ public class AtivoClienteControllerTests {
 
             List<AtivoResponseDTO> ativosRetornados = objectMapper.readValue(
                     responseJsonString,
-                    new TypeReference<List<AtivoResponseDTO>>() {}
+                    new TypeReference<List<AtivoResponseDTO>>() {
+                    }
             );
 
             assertEquals(3, ativosRetornados.size());
@@ -418,7 +418,7 @@ public class AtivoClienteControllerTests {
         @DisplayName("Quando o código de acesso do administrador for inválido")
         void codigoAcessoInvalido() throws Exception {
 
-            Ativo ativo =  ativos.get(0);
+            Ativo ativo = ativos.get(0);
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
 
             String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
@@ -439,7 +439,7 @@ public class AtivoClienteControllerTests {
 
             Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
 
-            Ativo ativo =  ativos.get(0);
+            Ativo ativo = ativos.get(0);
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
 
             String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
@@ -457,7 +457,7 @@ public class AtivoClienteControllerTests {
         @DisplayName("Quando o tipo do ativo não permitir atualização de cotação")
         void tipoAtivoNaoPermiteAtualizacao() throws Exception {
 
-            Ativo ativo =  ativos.get(0);
+            Ativo ativo = ativos.get(0);
 
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
             String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
@@ -476,8 +476,7 @@ public class AtivoClienteControllerTests {
         @DisplayName("Quando a nova cotação variar menos que 1% em relação à atual")
         void cotacaoAbaixoDoMinimoPermitido() throws Exception {
 
-            Ativo ativo =  ativos.get(3);
-
+            Ativo ativo = ativos.get(3);
 
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
             ativoPostPutRequestDTO.setValor(ativo.getValor() * 1.009);
@@ -497,7 +496,7 @@ public class AtivoClienteControllerTests {
         @DisplayName("Quando a cotação for atualizada com sucesso")
         void atualizacaoCotacaoSucesso() throws Exception {
 
-            Ativo ativo =  ativos.get(3);
+            Ativo ativo = ativos.get(3);
 
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
             ativoPostPutRequestDTO.setValor(110.0);
@@ -531,7 +530,7 @@ public class AtivoClienteControllerTests {
         @DisplayName("Quando o código de acesso do administrador for inválido")
         void codigoAcessoInvalido() throws Exception {
 
-            Ativo ativo =  ativos.get(0);
+            Ativo ativo = ativos.get(0);
             Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
             driver.perform(patch("/usuario/" + admin.getId() + "/ativar-desativar/" + ativo.getId())
                             .param("codigoAcesso", "codigoErrado")
@@ -570,10 +569,11 @@ public class AtivoClienteControllerTests {
 
             AtivoResponseDTO ativoRetornado = objectMapper.readValue(
                     responseJsonString,
-                    new TypeReference<AtivoResponseDTO>() {}
+                    new TypeReference<AtivoResponseDTO>() {
+                    }
             );
 
-            assertEquals(ativoRetornado.getStatusDisponibilidade(), StatusDisponibilidade.INDISPONIVEL);
+            assertEquals(StatusDisponibilidade.INDISPONIVEL, ativoRetornado.getStatusDisponibilidade());
         }
 
         @Test
@@ -593,10 +593,11 @@ public class AtivoClienteControllerTests {
 
             AtivoResponseDTO ativoRetornado = objectMapper.readValue(
                     responseJsonString,
-                    new TypeReference<AtivoResponseDTO>() {}
+                    new TypeReference<AtivoResponseDTO>() {
+                    }
             );
 
-            assertEquals(ativoRetornado.getStatusDisponibilidade(), StatusDisponibilidade.DISPONIVEL);
+            assertEquals(StatusDisponibilidade.DISPONIVEL, ativoRetornado.getStatusDisponibilidade());
         }
     }
 
@@ -643,8 +644,8 @@ public class AtivoClienteControllerTests {
     }
 
     @Nested
-    @DisplayName("Testes para avisos de variação de mais de 10% na cotação")
-    class AdicionarInteressados {
+    @DisplayName("Testes para adição de cliente interessado em ativo")
+    class AdicionarInteressado {
 
         @Test
         @Transactional
@@ -652,13 +653,9 @@ public class AtivoClienteControllerTests {
         void adicionandoInteressadoComSucesso() throws Exception {
 
             Ativo ativo = ativos.get(3);
-            Cliente cliente = clientes.get(2);
+            Cliente cliente = clientes.get(2); // Cliente com plano premium
 
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-
-            String json =  objectMapper.writeValueAsString(ativo);
+            String json = objectMapper.writeValueAsString(ativo);
 
             driver.perform(
                     patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), ativo.getId()))
@@ -670,7 +667,6 @@ public class AtivoClienteControllerTests {
             assertEquals(1, ativoAtualizado.getInteressados().size());
 
         }
-
     }
 
     @Nested
@@ -1091,5 +1087,4 @@ public class AtivoClienteControllerTests {
         }
 
     }
-
 }
