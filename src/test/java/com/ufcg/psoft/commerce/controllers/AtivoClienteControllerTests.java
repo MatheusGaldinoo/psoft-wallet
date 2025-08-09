@@ -9,6 +9,7 @@ import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
+import com.ufcg.psoft.commerce.exceptions.CustomErrorType;
 import com.ufcg.psoft.commerce.models.*;
 import com.ufcg.psoft.commerce.repositories.AdministradorRepository;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
@@ -474,7 +475,6 @@ public class AtivoClienteControllerTests {
 
             Ativo ativo = ativos.get(3);
 
-
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
             ativoPostPutRequestDTO.setValor(ativo.getValor() * 1.009);
             String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
@@ -570,7 +570,7 @@ public class AtivoClienteControllerTests {
                     }
             );
 
-            assertEquals(ativoRetornado.getStatusDisponibilidade(), StatusDisponibilidade.INDISPONIVEL);
+            assertEquals(StatusDisponibilidade.INDISPONIVEL, ativoRetornado.getStatusDisponibilidade());
         }
 
         @Test
@@ -594,7 +594,7 @@ public class AtivoClienteControllerTests {
                     }
             );
 
-            assertEquals(ativoRetornado.getStatusDisponibilidade(), StatusDisponibilidade.DISPONIVEL);
+            assertEquals(StatusDisponibilidade.DISPONIVEL, ativoRetornado.getStatusDisponibilidade());
         }
     }
 
@@ -641,8 +641,8 @@ public class AtivoClienteControllerTests {
     }
 
     @Nested
-    @DisplayName("Testes para avisos de variação de mais de 10% na cotação")
-    class AdicionarInteressados {
+    @DisplayName("Testes para adição de cliente interessado em ativo")
+    class AdicionarInteressado {
 
         @Test
         @Transactional
@@ -650,7 +650,7 @@ public class AtivoClienteControllerTests {
         void adicionandoInteressadoComSucesso() throws Exception {
 
             Ativo ativo = ativos.get(3);
-            Cliente cliente = clientes.get(2);
+            Cliente cliente = clientes.get(2); // Cliente com plano premium
 
             String json = objectMapper.writeValueAsString(ativo);
 
@@ -752,6 +752,81 @@ public class AtivoClienteControllerTests {
 
             Ativo ativoAtualizado = ativoRepository.findById(ativoComInteressados.getId()).orElseThrow();
             assertEquals(1, ativoAtualizado.getInteressados().size(), "Lista de interessados deve continuar intacta ao desativar");
+
+        @Test
+        @Transactional
+        @DisplayName("Quando o cliente não tem plano premium")
+        void planoNaoPermiteManifestarInteresse() throws Exception {
+
+            Ativo ativo = ativos.get(3);
+            Cliente cliente = clientes.get(1); // Cliente com plano normal
+
+            String json = objectMapper.writeValueAsString(ativo);
+
+            String responseJsonString = driver.perform(
+                            patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), ativo.getId()))
+                                    .param("codigoAcesso", "123456")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isForbidden())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
+
+            assertEquals("Plano do cliente nao permite marcar interesse!", resultado.getMessage());
+
+            Ativo ativoAtualizado = ativoRepository.findById(ativo.getId()).orElseThrow(Exception::new);
+            assertFalse(ativoAtualizado.getInteressados().contains(cliente.getId()));
+        }
+
+        @Test
+        @DisplayName("Quando tentar adicionar um interessado em um ativo que não existe")
+        void adicionandoInteressadoEmAtivoInexistente() throws Exception {
+
+            Ativo ativo = ativos.get(3);
+            Cliente cliente = clientes.get(2);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
+
+            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
+
+            String responseJsonString = driver.perform(
+                            patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), 999999))
+                                    .param("codigoAcesso", "123456")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
+
+            assertEquals("O ativo consultado nao existe!", resultado.getMessage());
+        }
+
+        @Test
+        @DisplayName("Quando tentar adicionar um interessado não cadastrado em um ativo")
+        void adicionandoInteressadoInexistenteEmAtivo() throws Exception {
+
+            Ativo ativo = ativos.get(3);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
+
+            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
+
+            String responseJsonString = driver.perform(
+                            patch(String.format("/usuario/%d/marcar-interesse/%d", 999999, ativo.getId()))
+                                    .param("codigoAcesso", "123456")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
+
+            assertEquals("O cliente consultado nao existe!", resultado.getMessage());
         }
     }
 }

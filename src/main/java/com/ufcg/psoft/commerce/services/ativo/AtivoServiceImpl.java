@@ -134,7 +134,6 @@ public class AtivoServiceImpl implements AtivoService {
             throw new VariacaoMinimaDeCotacaoNaoAtingidaException();
         }
 
-
         ativo.setValor(novaCotacao);
         ativoRepository.save(ativo);
 
@@ -143,8 +142,8 @@ public class AtivoServiceImpl implements AtivoService {
 
     @Override
     public void adicionarInteressado(Long idAtivo, Long idCliente)  {
-
         Ativo ativo = ativoRepository.findById(idAtivo).orElseThrow(AtivoNaoExisteException::new);
         ativo.addInteressado(idCliente);
     }
+
 }

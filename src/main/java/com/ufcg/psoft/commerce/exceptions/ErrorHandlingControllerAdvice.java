@@ -59,4 +59,11 @@ public class ErrorHandlingControllerAdvice {
         );
     }
 
+    @ExceptionHandler(ServicoNaoDisponivelParaPlanoException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseBody
+    public CustomErrorType onServicoNaoDisponivelParaPlanoException(ServicoNaoDisponivelParaPlanoException e) {
+        return defaultCustomErrorTypeConstruct(e.getMessage());
+    }
+
 }
