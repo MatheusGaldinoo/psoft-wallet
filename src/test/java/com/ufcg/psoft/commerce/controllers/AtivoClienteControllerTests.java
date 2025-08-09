@@ -22,10 +22,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.bind.annotation.PatchMapping;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -101,7 +101,7 @@ public class AtivoClienteControllerTests {
 
         for (int i = 1; i <= 3; i++) {
             criarAtivo("Ativo" + i, tesouro, 1.0 * i, StatusDisponibilidade.DISPONIVEL);
-            criarCliente("Cliente" + i, (i%2 == 0 ? TipoPlano.NORMAL : TipoPlano.PREMIUM));
+            criarCliente("Cliente" + i, (i % 2 == 0 ? TipoPlano.NORMAL : TipoPlano.PREMIUM));
         }
         for (int i = 4; i <= 7; i++) {
             criarAtivo("Ativo" + i, cripto, 1.0 * i, StatusDisponibilidade.DISPONIVEL);
@@ -365,7 +365,8 @@ public class AtivoClienteControllerTests {
 
             List<AtivoResponseDTO> ativosRetornados = objectMapper.readValue(
                     responseJsonString,
-                    new TypeReference<List<AtivoResponseDTO>>() {}
+                    new TypeReference<List<AtivoResponseDTO>>() {
+                    }
             );
 
             assertEquals(ativos.size(), ativosRetornados.size());
@@ -389,7 +390,8 @@ public class AtivoClienteControllerTests {
 
             List<AtivoResponseDTO> ativosRetornados = objectMapper.readValue(
                     responseJsonString,
-                    new TypeReference<List<AtivoResponseDTO>>() {}
+                    new TypeReference<List<AtivoResponseDTO>>() {
+                    }
             );
 
             assertEquals(3, ativosRetornados.size());
@@ -412,7 +414,7 @@ public class AtivoClienteControllerTests {
         @DisplayName("Quando o código de acesso do administrador for inválido")
         void codigoAcessoInvalido() throws Exception {
 
-            Ativo ativo =  ativos.get(0);
+            Ativo ativo = ativos.get(0);
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
 
             String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
@@ -433,7 +435,7 @@ public class AtivoClienteControllerTests {
 
             Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
 
-            Ativo ativo =  ativos.get(0);
+            Ativo ativo = ativos.get(0);
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
 
             String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
@@ -451,7 +453,7 @@ public class AtivoClienteControllerTests {
         @DisplayName("Quando o tipo do ativo não permitir atualização de cotação")
         void tipoAtivoNaoPermiteAtualizacao() throws Exception {
 
-            Ativo ativo =  ativos.get(0);
+            Ativo ativo = ativos.get(0);
 
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
             String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
@@ -470,7 +472,7 @@ public class AtivoClienteControllerTests {
         @DisplayName("Quando a nova cotação variar menos que 1% em relação à atual")
         void cotacaoAbaixoDoMinimoPermitido() throws Exception {
 
-            Ativo ativo =  ativos.get(3);
+            Ativo ativo = ativos.get(3);
 
 
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
@@ -491,7 +493,7 @@ public class AtivoClienteControllerTests {
         @DisplayName("Quando a cotação for atualizada com sucesso")
         void atualizacaoCotacaoSucesso() throws Exception {
 
-            Ativo ativo =  ativos.get(3);
+            Ativo ativo = ativos.get(3);
 
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
             ativoPostPutRequestDTO.setValor(110.0);
@@ -525,7 +527,7 @@ public class AtivoClienteControllerTests {
         @DisplayName("Quando o código de acesso do administrador for inválido")
         void codigoAcessoInvalido() throws Exception {
 
-            Ativo ativo =  ativos.get(0);
+            Ativo ativo = ativos.get(0);
             Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
             driver.perform(patch("/usuario/" + admin.getId() + "/ativar-desativar/" + ativo.getId())
                             .param("codigoAcesso", "codigoErrado")
@@ -564,7 +566,8 @@ public class AtivoClienteControllerTests {
 
             AtivoResponseDTO ativoRetornado = objectMapper.readValue(
                     responseJsonString,
-                    new TypeReference<AtivoResponseDTO>() {}
+                    new TypeReference<AtivoResponseDTO>() {
+                    }
             );
 
             assertEquals(ativoRetornado.getStatusDisponibilidade(), StatusDisponibilidade.INDISPONIVEL);
@@ -587,7 +590,8 @@ public class AtivoClienteControllerTests {
 
             AtivoResponseDTO ativoRetornado = objectMapper.readValue(
                     responseJsonString,
-                    new TypeReference<AtivoResponseDTO>() {}
+                    new TypeReference<AtivoResponseDTO>() {
+                    }
             );
 
             assertEquals(ativoRetornado.getStatusDisponibilidade(), StatusDisponibilidade.DISPONIVEL);
@@ -648,11 +652,7 @@ public class AtivoClienteControllerTests {
             Ativo ativo = ativos.get(3);
             Cliente cliente = clientes.get(2);
 
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-
-            String json =  objectMapper.writeValueAsString(ativo);
+            String json = objectMapper.writeValueAsString(ativo);
 
             driver.perform(
                     patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), ativo.getId()))
@@ -664,7 +664,73 @@ public class AtivoClienteControllerTests {
             assertEquals(1, ativoAtualizado.getInteressados().size());
 
         }
-
     }
 
+    @Nested
+    @DisplayName("Testes de notificação de interessados")
+    class NotificacaoInteressados {
+
+        private final PrintStream originalOut = System.out;
+        private ByteArrayOutputStream outContent;
+
+        Ativo ativoComInteressados;
+        Ativo ativoSemInteressados;
+        Cliente cliente;
+
+        @BeforeEach
+        void setUp() {
+            outContent = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(outContent));
+
+            ativoComInteressados = ativos.get(0);
+            ativoSemInteressados = ativos.get(1);
+            cliente = clientes.get(0);
+
+            ativoComInteressados.getInteressados().add(cliente.getId());
+            ativoComInteressados.setStatusDisponibilidade(StatusDisponibilidade.INDISPONIVEL);
+            ativoRepository.save(ativoComInteressados);
+
+            ativoSemInteressados.setStatusDisponibilidade(StatusDisponibilidade.INDISPONIVEL);
+            ativoRepository.save(ativoSemInteressados);
+        }
+
+        @AfterEach
+        void tearDown() {
+            System.setOut(originalOut);
+        }
+
+        private String ativarAtivo(Long idUser, Long idAtivo, boolean imprimir) throws Exception {
+            var perform = driver.perform(patch("/usuario/" + idUser + "/ativar-desativar/" + idAtivo)
+                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                    .contentType(MediaType.APPLICATION_JSON));
+
+            if (imprimir) {
+                perform.andDo(print());
+            }
+
+            perform.andExpect(status().isOk());
+
+            return outContent.toString();
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Deve imprimir notificação para interessados quando ativo fica disponível")
+        void deveImprimirNotificacaoParaInteressados() throws Exception {
+            String output = ativarAtivo(ativoComInteressados.getId(), ativoComInteressados.getId(), true);
+
+            assertTrue(output.contains(cliente.getNome()), "Deve conter o nome do cliente na notificação");
+            assertTrue(output.contains(ativoComInteressados.getNome()), "Deve conter o nome do ativo na notificação");
+            assertTrue(output.contains("disponível"), "Deve indicar que o ativo está disponível");
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Não deve imprimir nada se não houver interessados")
+        void naoDeveImprimirNotificacaoSemInteressados() throws Exception {
+            String output = ativarAtivo(cliente.getId(), ativoSemInteressados.getId(), false);
+
+            assertFalse(output.contains("Notificação para:"), "Não deve imprimir notificação quando não há interessados");
+        }
+    }
 }
