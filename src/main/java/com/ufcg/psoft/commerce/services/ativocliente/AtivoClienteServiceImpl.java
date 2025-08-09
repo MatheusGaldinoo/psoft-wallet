@@ -163,7 +163,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
 
         AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
 
-        if((cliente.getPlano() == TipoPlano.NORMAL) && (ativo.getTipo().getNomeTipo() != TipoAtivo.TESOURO_DIRETO)){
+        if((cliente.getPlano() == TipoPlano.NORMAL) && (ativo.getTipo() != TipoAtivo.TESOURO_DIRETO)){
             throw new ServicoNaoDisponivelParaPlanoException("Plano do cliente nao permite marcar interesse!");
         }
 

@@ -8,7 +8,8 @@ import com.ufcg.psoft.commerce.models.Acao;
 import com.ufcg.psoft.commerce.models.CriptoMoeda;
 import com.ufcg.psoft.commerce.models.TesouroDireto;
 import jakarta.persistence.*;
-import lombok.Data;
+import lombok.*;
+
 
 
 @Entity

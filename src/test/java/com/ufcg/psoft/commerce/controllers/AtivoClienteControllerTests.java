@@ -866,7 +866,7 @@ public class AtivoClienteControllerTests {
             assertAll(
                     () -> assertEquals(resultado.getId().longValue(), ativo.getId()),
                     () -> assertEquals(resultado.getNome(), ativo.getNome()),
-                    () -> assertEquals(resultado.getTipo(), ativo.getTipo()),
+                    () -> assertEquals(resultado.getTipo(), ativo.getTipo().getNomeTipo()),
                     () -> assertEquals(resultado.getValor(), ativo.getValor()),
                     () -> assertEquals(resultado.getDescricao(), ativo.getDescricao()),
                     () -> assertEquals(resultado.getStatusDisponibilidade(), ativo.getStatusDisponibilidade())
@@ -960,7 +960,7 @@ public class AtivoClienteControllerTests {
             assertAll(
                     () -> assertEquals(resultado.getId().longValue(), ativo.getId()),
                     () -> assertEquals(resultado.getNome(), ativo.getNome()),
-                    () -> assertEquals(resultado.getTipo(), ativo.getTipo()),
+                    () -> assertEquals(resultado.getTipo(), ativo.getTipo().getNomeTipo()),
                     () -> assertEquals(resultado.getValor(), ativo.getValor()),
                     () -> assertEquals(resultado.getDescricao(), ativo.getDescricao()),
                     () -> assertEquals(resultado.getStatusDisponibilidade(), ativo.getStatusDisponibilidade())
@@ -994,7 +994,7 @@ public class AtivoClienteControllerTests {
             assertAll(
                     () -> assertEquals(resultado.getId().longValue(), ativo.getId()),
                     () -> assertEquals(resultado.getNome(), ativo.getNome()),
-                    () -> assertEquals(resultado.getTipo(), ativo.getTipo()),
+                    () -> assertEquals(resultado.getTipo(), ativo.getTipo().getNomeTipo()),
                     () -> assertEquals(resultado.getValor(), ativo.getValor()),
                     () -> assertEquals(resultado.getDescricao(), ativo.getDescricao()),
                     () -> assertEquals(resultado.getStatusDisponibilidade(), ativo.getStatusDisponibilidade())
@@ -1028,7 +1028,7 @@ public class AtivoClienteControllerTests {
             assertAll(
                     () -> assertEquals(resultado.getId().longValue(), ativo.getId()),
                     () -> assertEquals(resultado.getNome(), ativo.getNome()),
-                    () -> assertEquals(resultado.getTipo(), ativo.getTipo()),
+                    () -> assertEquals(resultado.getTipo(), ativo.getTipo().getNomeTipo()),
                     () -> assertEquals(resultado.getValor(), ativo.getValor()),
                     () -> assertEquals(resultado.getDescricao(), ativo.getDescricao()),
                     () -> assertEquals(resultado.getStatusDisponibilidade(), ativo.getStatusDisponibilidade())
