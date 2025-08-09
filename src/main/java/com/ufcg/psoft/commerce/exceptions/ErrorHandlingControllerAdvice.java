@@ -65,5 +65,4 @@ public class ErrorHandlingControllerAdvice {
     public CustomErrorType onServicoNaoDisponivelParaPlanoException(ServicoNaoDisponivelParaPlanoException e) {
         return defaultCustomErrorTypeConstruct(e.getMessage());
     }
-
 }

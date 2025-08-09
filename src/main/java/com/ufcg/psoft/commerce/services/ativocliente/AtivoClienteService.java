@@ -24,4 +24,6 @@ public interface AtivoClienteService {
     void adicionarInteressado(Long idAtivo, Long idCliente) throws ServicoNaoDisponivelParaPlanoException;
 
     AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso);
+
+    AtivoResponseDTO visualizarAtivo(Long idCliente, Long idAtivo);
 }

@@ -11,5 +11,4 @@ public class ServicoNaoDisponivelParaPlanoException extends CommerceException {
         super(s);
 
     }
-
 }

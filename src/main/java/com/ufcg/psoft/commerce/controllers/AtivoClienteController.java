@@ -92,4 +92,15 @@ public class AtivoClienteController {
                 .status(HttpStatus.OK)
                 .body(ativoClienteService.listarAtivosDisponiveis(idUser));
     }
+
+    @GetMapping("/{idCliente}/visualizar-ativo/{idAtivo}")
+    public ResponseEntity<?> visualizarAtivo(
+            @PathVariable Long idCliente,
+            @PathVariable Long idAtivo) {
+
+        return ResponseEntity
+                .status(HttpStatus.OK)
+                .body(ativoClienteService.visualizarAtivo(idCliente, idAtivo));
+    }
+
 }
