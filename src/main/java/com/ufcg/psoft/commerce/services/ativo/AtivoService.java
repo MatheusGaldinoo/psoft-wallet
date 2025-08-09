@@ -8,9 +8,9 @@ import java.util.List;
 
 public interface AtivoService {
 
-    AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso);
+    AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO);
 
-    AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso);
+    AtivoResponseDTO ativarOuDesativar(Long id);
 
     List<AtivoResponseDTO> listarTodos();
 
@@ -18,9 +18,13 @@ public interface AtivoService {
 
     AtivoResponseDTO recuperar(Long id);
 
-    AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso);
+    AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO);
 
-    void remover(Long id, String codigoAcesso);
+    void remover(Long id);
 
-    AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao, String codigoAcesso);
+    List<Long> recuperarInteressados(Long id);
+
+    AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao);
+
+    void adicionarInteressado(Long idAtivo, Long idCliente);
 }

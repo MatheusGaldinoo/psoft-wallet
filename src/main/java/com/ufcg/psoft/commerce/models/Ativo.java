@@ -48,5 +48,9 @@ public class Ativo {
     @ElementCollection
     @CollectionTable(name = "ativo_interessados", joinColumns = @JoinColumn(name = "ativo_id"))
     @Column(name = "cliente_id")
-    private List<UUID> interessados;
+    private List<Long> interessados;
+
+    public void addInteressado(Long idCliente) {
+        this.interessados.add(idCliente);
+    }
 }

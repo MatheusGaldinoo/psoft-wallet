@@ -10,6 +10,8 @@ import jakarta.persistence.DiscriminatorValue;
 @DiscriminatorValue("ACAO")
 public class Acao extends TipoDeAtivo{
 
+    public Acao() {}
+
     public Double calcularDesconto(){
         return 0.0;
     }

@@ -7,7 +7,6 @@ import com.ufcg.psoft.commerce.exceptions.AtivoNaoExisteException;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.models.Ativo;
-import com.ufcg.psoft.commerce.models.Cliente;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
@@ -36,17 +35,16 @@ public class AtivoServiceImpl implements AtivoService {
     ModelMapper modelMapper;
 
     @Override
-    public AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
+
+    public AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO) {
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
         modelMapper.map(ativoPostPutRequestDTO, ativo);
         return modelMapper.map(ativo, AtivoResponseDTO.class);
     }
 
     @Override
-    public AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso) {
+    public AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO) {
 
-        administradorService.validarCodigoAcesso(codigoAcesso);
         List<TipoDeAtivo> tiposDeAtivo = tipoDeAtivoRepository.findAll();
         TipoDeAtivo tipo = tiposDeAtivo.stream()
                 .filter((t) -> t.getNomeTipo() == ativoPostPutRequestDTO.getTipo())
@@ -60,15 +58,14 @@ public class AtivoServiceImpl implements AtivoService {
     }
 
     @Override
-    public void remover(Long id, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
+    public void remover(Long id) {
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
         ativoRepository.delete(ativo);
     }
 
     @Override
-    public AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
+    public AtivoResponseDTO ativarOuDesativar(Long id) {
+
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
         if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.INDISPONIVEL) {
             ativo.setStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
@@ -104,8 +101,13 @@ public class AtivoServiceImpl implements AtivoService {
     }
 
     @Override
-    public AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
+    public List<Long> recuperarInteressados(Long id) {
+        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
+        return ativo.getInteressados();
+    }
+
+    @Override
+    public AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao) {
 
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
 
@@ -125,4 +127,11 @@ public class AtivoServiceImpl implements AtivoService {
 
         return modelMapper.map(ativo, AtivoResponseDTO.class);
     }
+
+    @Override
+    public void adicionarInteressado(Long idAtivo, Long idCliente)  {
+        Ativo ativo = ativoRepository.findById(idAtivo).orElseThrow(AtivoNaoExisteException::new);
+        ativo.addInteressado(idCliente);
+    }
+
 }

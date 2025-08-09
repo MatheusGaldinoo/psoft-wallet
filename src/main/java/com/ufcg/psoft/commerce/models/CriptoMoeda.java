@@ -9,6 +9,9 @@ import jakarta.persistence.DiscriminatorValue;
 @Entity
 @DiscriminatorValue("CRIPTOMOEDA")
 public class CriptoMoeda extends TipoDeAtivo{
+
+    public CriptoMoeda() {}
+
     public Double calcularDesconto(){
         return 0.0;
     }

@@ -19,6 +19,7 @@ public class AtivoController {
     @Autowired
     private AtivoService ativoService;
 
+
     @GetMapping("")
     public ResponseEntity<?> listarAtivos() {
         return ResponseEntity
@@ -34,51 +35,4 @@ public class AtivoController {
                 .body(ativoService.recuperar(id));
     }
 
-    @PostMapping()
-    public ResponseEntity<?> criarAtivo(
-            @RequestParam String codigoAcesso,
-            @RequestBody @Valid AtivoPostPutRequestDTO ativoPostPutRequestDto) {
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .body(ativoService.criar(ativoPostPutRequestDto, codigoAcesso));
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<?> atualizarAtivo(
-            @PathVariable Long id,
-            @RequestParam String codigoAcesso,
-            @RequestBody @Valid AtivoPostPutRequestDTO ativoPostPutRequestDto) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(ativoService.alterar(id, ativoPostPutRequestDto, codigoAcesso));
-    }
-
-    @PatchMapping("/{id}")
-    public ResponseEntity<?> ativarOuDesativarAtivo(
-            @PathVariable Long id,
-            @RequestParam String codigoAcesso) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(ativoService.ativarOuDesativar(id, codigoAcesso));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<?> excluirAtivo(
-            @PathVariable Long id,
-            @RequestParam String codigoAcesso) {
-        ativoService.remover(id, codigoAcesso);
-        return ResponseEntity
-                .status(HttpStatus.NO_CONTENT)
-                .body("");
-    }
-
-    @PatchMapping("/{id}/cotacao")
-    public ResponseEntity<?> atualizarCotacaoDoAtivo(
-            @PathVariable Long id,
-            @RequestParam Double novaCotacao,
-            @RequestParam String codigoAcesso) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(ativoService.atualizarCotacao(id, novaCotacao, codigoAcesso));
-    }
 }

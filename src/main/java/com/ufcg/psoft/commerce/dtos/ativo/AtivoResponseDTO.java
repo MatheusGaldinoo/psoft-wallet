@@ -1,6 +1,7 @@
 package com.ufcg.psoft.commerce.dtos.ativo;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.models.Ativo;
 import lombok.AllArgsConstructor;
@@ -21,7 +22,7 @@ public class AtivoResponseDTO {
     private String nome;
 
     @JsonProperty("tipo")
-    private String tipo;
+    private TipoDeAtivo tipo;
 
     @JsonProperty("descricao")
     private String descricao;
@@ -35,7 +36,7 @@ public class AtivoResponseDTO {
     public AtivoResponseDTO(Ativo ativo) {
         this.id = ativo.getId();
         this.nome = ativo.getNome();
-        this.tipo = ativo.getTipo().getClass().getSimpleName();
+        this.tipo = ativo.getTipo();
         this.descricao = ativo.getDescricao();
         this.statusDisponibilidade = ativo.getStatusDisponibilidade();
         this.valor = ativo.getValor();
