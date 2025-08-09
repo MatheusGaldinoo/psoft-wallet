@@ -109,6 +109,14 @@ public class AtivoServiceImpl implements AtivoService {
         return ativo.getInteressados();
     }
 
+    public void limparInteressados(Long id) {
+        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
+
+        if (ativo.getInteressados() != null && !ativo.getInteressados().isEmpty()) {
+            ativo.getInteressados().clear();
+            ativoRepository.save(ativo);
+        }
+    }
 
     @Override
     public AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao) {

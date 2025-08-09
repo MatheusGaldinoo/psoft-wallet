@@ -10,6 +10,7 @@ import com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
 import com.ufcg.psoft.commerce.exceptions.ServicoNaoDisponivelParaPlanoException;
 import com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
 import com.ufcg.psoft.commerce.loggers.Logger;
+import com.ufcg.psoft.commerce.repositories.AtivoRepository;
 import com.ufcg.psoft.commerce.repositories.ClienteRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
@@ -34,6 +35,9 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
 
     @Autowired
     AdministradorService administradorService;
+
+    @Autowired
+    AtivoRepository ativoRepository;
 
     @Autowired
     TipoDeAtivoRepository tipoDeAtivoRepository;
@@ -118,7 +122,10 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
 
         AtivoResponseDTO ativoAtualizado = ativoService.ativarOuDesativar(id);
 
-        notificarInteressados(ativoAtualizado, id);
+        if (ativoAtualizado.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL) {
+            notificarInteressados(ativoAtualizado, id);
+            ativoService.limparInteressados(id);
+        }
 
         return ativoAtualizado;
     }
@@ -138,7 +145,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
                 out.append("O ativo '").append(ativo.getNome())
                         .append("' agora está disponível para compra!\n");
 
-                System.out.println(out.toString());
+                System.out.println(out);
             }
         }
     }

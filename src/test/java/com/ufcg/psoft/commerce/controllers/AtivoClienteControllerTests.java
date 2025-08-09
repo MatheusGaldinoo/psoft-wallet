@@ -715,13 +715,14 @@ public class AtivoClienteControllerTests {
 
         @Test
         @Transactional
-        @DisplayName("Deve imprimir notificação para interessados quando ativo fica disponível")
-        void deveImprimirNotificacaoParaInteressados() throws Exception {
+        @DisplayName("Deve imprimir notificação para interessados quando ativo fica disponível e limpar a lista")
+        void deveImprimirNotificacaoParaInteressadosELimparAListaParaNotificarUnicaVez() throws Exception {
             String output = ativarAtivo(ativoComInteressados.getId(), ativoComInteressados.getId(), true);
 
             assertTrue(output.contains(cliente.getNome()), "Deve conter o nome do cliente na notificação");
             assertTrue(output.contains(ativoComInteressados.getNome()), "Deve conter o nome do ativo na notificação");
             assertTrue(output.contains("disponível"), "Deve indicar que o ativo está disponível");
+            assertEquals(0, ativoComInteressados.getInteressados().size());
         }
 
         @Test
@@ -731,6 +732,26 @@ public class AtivoClienteControllerTests {
             String output = ativarAtivo(cliente.getId(), ativoSemInteressados.getId(), false);
 
             assertFalse(output.contains("Notificação para:"), "Não deve imprimir notificação quando não há interessados");
+            assertEquals(0, ativoSemInteressados.getInteressados().size());
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Não deve imprimir notificação nem limpar interessados ao desativar ativo")
+        void naoDeveNotificarNemLimparAoDesativarAtivo() throws Exception {
+            ativoComInteressados.setStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
+            ativoRepository.save(ativoComInteressados);
+
+            assertEquals(1, ativoComInteressados.getInteressados().size(), "Lista de interessados deve continuar intacta ao desativar");
+
+            var perform = driver.perform(patch("/usuario/" + ativoComInteressados.getId() + "/ativar-desativar/" + ativoComInteressados.getId())
+                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                    .contentType(MediaType.APPLICATION_JSON));
+
+            perform.andExpect(status().isOk());
+
+            Ativo ativoAtualizado = ativoRepository.findById(ativoComInteressados.getId()).orElseThrow();
+            assertEquals(1, ativoAtualizado.getInteressados().size(), "Lista de interessados deve continuar intacta ao desativar");
         }
     }
 }
