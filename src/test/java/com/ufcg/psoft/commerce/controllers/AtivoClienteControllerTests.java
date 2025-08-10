@@ -779,7 +779,7 @@ public class AtivoClienteControllerTests {
             assertEquals("Plano do cliente nao permite marcar interesse!", resultado.getMessage());
 
             Ativo ativoAtualizado = ativoRepository.findById(ativo.getId()).orElseThrow(Exception::new);
-            assertFalse(ativoAtualizado.getInteressados().contains(cliente.getId()));
+            assertFalse(ativoAtualizado.getInteressadosCotacao().contains(cliente.getId()));
         }
 
         @Test
