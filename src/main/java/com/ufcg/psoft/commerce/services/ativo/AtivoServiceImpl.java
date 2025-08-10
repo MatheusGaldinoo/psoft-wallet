@@ -39,7 +39,6 @@ public class AtivoServiceImpl implements AtivoService {
     public AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO) {
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
         modelMapper.map(ativoPostPutRequestDTO, ativo);
-        ativoRepository.save(ativo);
         return modelMapper.map(ativo, AtivoResponseDTO.class);
     }
 
@@ -51,7 +50,8 @@ public class AtivoServiceImpl implements AtivoService {
                 .filter((t) -> t.getNomeTipo() == ativoPostPutRequestDTO.getTipo())
                 .collect(Collectors.toList()).get(0);
         Ativo ativo = modelMapper.map(ativoPostPutRequestDTO, Ativo.class);
-        ativo.setInteressados(new ArrayList<>());
+        ativo.setInteressadosCotacao(new ArrayList<>());
+        ativo.setInteressadosDisponibilidade(new ArrayList<>());
         ativo.setTipo(tipo);
         ativoRepository.save(ativo);
         return modelMapper.map(ativo, AtivoResponseDTO.class);
@@ -66,15 +66,13 @@ public class AtivoServiceImpl implements AtivoService {
 
     @Override
     public AtivoResponseDTO ativarOuDesativar(Long id) {
-        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
 
+        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
         if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.INDISPONIVEL) {
             ativo.setStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
         } else {
             ativo.setStatusDisponibilidade(StatusDisponibilidade.INDISPONIVEL);
         }
-
-        ativoRepository.save(ativo);
         return modelMapper.map(ativo, AtivoResponseDTO.class);
     }
 
@@ -104,19 +102,40 @@ public class AtivoServiceImpl implements AtivoService {
     }
 
     @Override
-    public List<Long> recuperarInteressados(Long id) {
-        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
-        return ativo.getInteressados();
-    }
+    public void adicionarInteressado(Long idAtivo, Long idCliente) {
 
-    public void limparInteressados(Long id) {
-        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
+        Ativo ativo = ativoRepository.findById(idAtivo).orElseThrow(AtivoNaoExisteException::new);
 
-        if (ativo.getInteressados() != null && !ativo.getInteressados().isEmpty()) {
-            ativo.getInteressados().clear();
-            ativoRepository.save(ativo);
+        if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL) {
+            ativo.addInteressadoCotacao(idCliente);
+        } else {
+            ativo.addInteressadoDisponibilidade(idCliente);
         }
+
+        ativoRepository.save(ativo);
     }
+
+    @Override
+    public List<Long> recuperarInteressadosCotacao(Long id) {
+        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
+        return ativo.getInteressadosCotacao();
+    }
+
+    @Override
+    public List<Long> recuperarInteressadosDisponibilidade(Long id) {
+        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
+        return ativo.getInteressadosDisponibilidade();
+    }
+
+    @Override
+    public void limparInteressadosDisponibilidade(Long id) {
+        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
+
+        ativo.getInteressadosDisponibilidade().clear();
+
+        ativoRepository.save(ativo);
+    }
+
 
     @Override
     public AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao) {
@@ -139,11 +158,4 @@ public class AtivoServiceImpl implements AtivoService {
 
         return modelMapper.map(ativo, AtivoResponseDTO.class);
     }
-
-    @Override
-    public void adicionarInteressado(Long idAtivo, Long idCliente)  {
-        Ativo ativo = ativoRepository.findById(idAtivo).orElseThrow(AtivoNaoExisteException::new);
-        ativo.addInteressado(idCliente);
-    }
-
 }

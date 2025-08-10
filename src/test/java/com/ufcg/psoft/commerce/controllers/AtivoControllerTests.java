@@ -88,7 +88,8 @@ public class AtivoControllerTests {
                 .tipo(tipo)
                 .descricao("Descrição do " + nome)
                 .valor(valor)
-                .interessados(new ArrayList<>())
+                .interessadosCotacao(new ArrayList<>())
+                .interessadosDisponibilidade(new ArrayList<>())
                 .statusDisponibilidade(status)
                 .build()
         );

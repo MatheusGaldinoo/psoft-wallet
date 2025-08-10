@@ -91,7 +91,6 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         AtivoResponseDTO ativo = ativoService.criar(ativoPostPutRequestDTO);
 
         return ativo;
-
     }
 
     @Override
@@ -102,7 +101,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         Double variacaoPercentual = Math.abs((ativoPostPutRequestDTO.getValor() - novaCotacao) / novaCotacao) * 100;
 
         if (variacaoPercentual >= 0.10) {
-            List<Long> interessados = ativoService.recuperarInteressados(id);
+            List<Long> interessados = ativoService.recuperarInteressadosCotacao(id);
             for (Long idInteressado : interessados) {
                 ClienteResponseDTO cliente = clienteService.recuperar(idInteressado);
                 Logger.alertUser(cliente.getNome(),
@@ -124,30 +123,31 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
 
         if (ativoAtualizado.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL) {
             notificarInteressados(ativoAtualizado, id);
-            ativoService.limparInteressados(id);
+            ativoService.limparInteressadosDisponibilidade(id);
         }
 
         return ativoAtualizado;
     }
 
-    private void notificarInteressados(AtivoResponseDTO ativo, Long id){
-        if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL){
-            List<Long> interessados = ativoService.recuperarInteressados(id);
+    private void notificarInteressados(AtivoResponseDTO ativo, Long id) {
+        List<Long> interessados = ativoService.recuperarInteressadosDisponibilidade(id);
 
-            if (!interessados.isEmpty()) {
-                StringBuilder out = new StringBuilder("Notificação para:\n");
-
-                for (Long idInteressado : interessados) {
-                    ClienteResponseDTO cliente = clienteService.recuperar(idInteressado);
-                    out.append(cliente.getNome()).append("\n");
-                }
-
-                out.append("O ativo '").append(ativo.getNome())
-                        .append("' agora está disponível para compra!\n");
-
-                System.out.println(out);
-            }
+        if (interessados.isEmpty()) {
+            return;
         }
+
+        StringBuilder out = new StringBuilder("Notificação para:\n");
+
+        interessados.stream()
+                .map(clienteService::recuperar)
+                .map(ClienteResponseDTO::getNome)
+                .forEach(nome -> out.append(nome).append("\n"));
+
+        out.append("O ativo '")
+                .append(ativo.getNome())
+                .append("' agora está disponível para compra!\n");
+
+        System.out.println(out);
     }
 
     @Override
