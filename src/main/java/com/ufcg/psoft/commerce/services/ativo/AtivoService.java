@@ -30,5 +30,8 @@ public interface AtivoService {
 
     AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao);
 
-    void adicionarInteressado(Long idAtivo, Long idCliente);
+    void adicionarInteressadoCotacao(Long idAtivo, Long idCliente);
+
+    void adicionarInteressadoDisponibilidade(Long idAtivo, Long idCliente);
+
 }

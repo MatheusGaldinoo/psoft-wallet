@@ -416,6 +416,35 @@ public class AtivoClienteControllerTests {
     class AtualizacaoCotacao {
 
         @Test
+        @DisplayName("Quando a cotação for atualizada com sucesso")
+        void atualizacaoCotacaoSucesso() throws Exception {
+
+            Ativo ativo = ativos.get(3);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
+            ativoPostPutRequestDTO.setValor(110.0);
+
+            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
+
+            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
+            String responseJsonString = driver.perform(patch("/usuario/" + admin.getId() + "/atualizar-cotacao/" + ativo.getId())
+                            .param("codigoAcesso", "123456")
+                            .content(json)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, AtivoResponseDTO.class);
+
+            assertAll(
+                    () -> assertEquals(ativo.getId(), resultado.getId()),
+                    () -> assertEquals(110.0, resultado.getValor()),
+                    () -> assertEquals(ativo.getNome(), resultado.getNome())
+            );
+        }
+
+        @Test
         @DisplayName("Quando o código de acesso do administrador for inválido")
         void codigoAcessoInvalido() throws Exception {
 
@@ -493,34 +522,6 @@ public class AtivoClienteControllerTests {
                     .andExpect(jsonPath("$.message", containsString("A variação da cotação deve ser de no mínimo 1%.")));
         }
 
-        @Test
-        @DisplayName("Quando a cotação for atualizada com sucesso")
-        void atualizacaoCotacaoSucesso() throws Exception {
-
-            Ativo ativo = ativos.get(3);
-
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-            ativoPostPutRequestDTO.setValor(110.0);
-
-            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            String responseJsonString = driver.perform(patch("/usuario/" + admin.getId() + "/atualizar-cotacao/" + ativo.getId())
-                            .param("codigoAcesso", "123456")
-                            .content(json)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, AtivoResponseDTO.class);
-
-            assertAll(
-                    () -> assertEquals(ativo.getId(), resultado.getId()),
-                    () -> assertEquals(110.0, resultado.getValor()),
-                    () -> assertEquals(ativo.getNome(), resultado.getNome())
-            );
-        }
     }
 
     @Nested
@@ -650,10 +651,10 @@ public class AtivoClienteControllerTests {
 
         @Test
         @Transactional
-        @DisplayName("Adicionando Interessado com sucesso!")
-        void adicionandoInteressadoComSucesso() throws Exception {
+        @DisplayName("Adicionando com sucesso Interessado com conta premium na Cotação!")
+        void adicionandoInteressadoComPremiumNaCotacao() throws Exception {
 
-            Ativo ativo = ativos.get(3);
+            Ativo ativo = ativos.get(3); // Ativo disponível
             Cliente cliente = clientes.get(2); // Cliente com plano premium
 
             String json = objectMapper.writeValueAsString(ativo);
@@ -665,14 +666,144 @@ public class AtivoClienteControllerTests {
                             .content(json)).andExpect(status().isOk());
 
             Ativo ativoAtualizado = ativoRepository.findById(ativo.getId()).orElseThrow(Exception::new);
-            assertEquals(1, ativoAtualizado.getInteressadosCotacao().size());
 
+            assertAll(
+                    () -> assertEquals(1, ativoAtualizado.getInteressadosCotacao().size()),
+                    () -> assertTrue(ativoAtualizado.getInteressadosCotacao().contains(cliente.getId()))
+            );
+
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Adicionando com sucesso Interessado com conta premium na Disponibilidade!")
+        void adicionandoInteressadoComPremiumNaDisponibilidade() throws Exception {
+
+            Ativo ativo = ativos.get(8); // Ativo indisponível
+            Cliente cliente = clientes.get(2); // Cliente com plano premium
+
+            String json = objectMapper.writeValueAsString(ativo);
+
+            driver.perform(
+                    patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), ativo.getId()))
+                            .param("codigoAcesso", "123456")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json)).andExpect(status().isOk());
+
+            Ativo ativoAtualizado = ativoRepository.findById(ativo.getId()).orElseThrow(Exception::new);
+
+            assertAll(
+                    () -> assertEquals(1, ativoAtualizado.getInteressadosDisponibilidade().size()),
+                    () -> assertTrue(ativoAtualizado.getInteressadosDisponibilidade().contains(cliente.getId()))
+            );
+
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Adicionando com sucesso Interessado com conta normal na Disponibilidade!")
+        void adicionandoInteressadoNormalNaDisponibilidade() throws Exception {
+
+            Ativo ativo = ativos.get(8); // Ativo indisponível
+            Cliente cliente = clientes.get(1); // Cliente com plano normal
+
+            String json = objectMapper.writeValueAsString(ativo);
+
+            driver.perform(
+                    patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), ativo.getId()))
+                            .param("codigoAcesso", "123456")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json)).andExpect(status().isOk());
+
+            Ativo ativoAtualizado = ativoRepository.findById(ativo.getId()).orElseThrow(Exception::new);
+
+            assertAll(
+                    () -> assertEquals(1, ativoAtualizado.getInteressadosDisponibilidade().size()),
+                    () -> assertTrue(ativoAtualizado.getInteressadosDisponibilidade().contains(cliente.getId()))
+            );
+
+        }
+
+        @Test
+        @Transactional
+        @DisplayName("Quando o plano normal do cliente não permite marcar interesse na Cotação")
+        void planoNaoPermiteManifestarInteresse() throws Exception {
+
+            Ativo ativo = ativos.get(3); // Ativo disponível
+            Cliente cliente = clientes.get(1); // Cliente com plano normal
+
+            String json = objectMapper.writeValueAsString(ativo);
+
+            String responseJsonString = driver.perform(
+                            patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), ativo.getId()))
+                                    .param("codigoAcesso", "123456")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isForbidden())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
+
+            assertEquals("Plano do cliente nao permite marcar interesse!", resultado.getMessage());
+
+            Ativo ativoAtualizado = ativoRepository.findById(ativo.getId()).orElseThrow(Exception::new);
+            assertFalse(ativoAtualizado.getInteressadosCotacao().contains(cliente.getId()));
+        }
+
+        @Test
+        @DisplayName("Quando tentar adicionar um interessado em um ativo que não existe")
+        void adicionandoInteressadoEmAtivoInexistente() throws Exception {
+
+            Ativo ativo = ativos.get(3);
+            Cliente cliente = clientes.get(2);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
+
+            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
+
+            String responseJsonString = driver.perform(
+                            patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), 999999))
+                                    .param("codigoAcesso", "123456")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
+
+            assertEquals("O ativo consultado nao existe!", resultado.getMessage());
+        }
+
+        @Test
+        @DisplayName("Quando tentar adicionar um interessado não cadastrado em um ativo")
+        void adicionandoInteressadoInexistenteEmAtivo() throws Exception {
+
+            Ativo ativo = ativos.get(3);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
+
+            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
+
+            String responseJsonString = driver.perform(
+                            patch(String.format("/usuario/%d/marcar-interesse/%d", 999999, ativo.getId()))
+                                    .param("codigoAcesso", "123456")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
+
+            assertEquals("O cliente consultado nao existe!", resultado.getMessage());
         }
     }
 
     @Nested
-    @DisplayName("Testes de notificação de interessados")
-    class NotificacaoInteressados {
+    @DisplayName("Testes de notificação de interessados na disponibilidade")
+    class NotificacaoInteressadosDisponibilidade {
 
         private final PrintStream originalOut = System.out;
         private ByteArrayOutputStream outContent;
@@ -757,83 +888,10 @@ public class AtivoClienteControllerTests {
             Ativo ativoAtualizado = ativoRepository.findById(ativoComInteressados.getId()).orElseThrow();
             assertEquals(1, ativoAtualizado.getInteressadosDisponibilidade().size(), "Lista de interessados deve continuar intacta ao desativar");
         }
-
-        @Test
-        @Transactional
-        @DisplayName("Quando o cliente não tem plano premium")
-        void planoNaoPermiteManifestarInteresse() throws Exception {
-
-            Ativo ativo = ativos.get(3);
-            Cliente cliente = clientes.get(1); // Cliente com plano normal
-
-            String json = objectMapper.writeValueAsString(ativo);
-
-            String responseJsonString = driver.perform(
-                            patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), ativo.getId()))
-                                    .param("codigoAcesso", "123456")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(json))
-                    .andExpect(status().isForbidden())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
-
-            assertEquals("Plano do cliente nao permite marcar interesse!", resultado.getMessage());
-
-            Ativo ativoAtualizado = ativoRepository.findById(ativo.getId()).orElseThrow(Exception::new);
-            assertFalse(ativoAtualizado.getInteressadosCotacao().contains(cliente.getId()));
-        }
-
-        @Test
-        @DisplayName("Quando tentar adicionar um interessado em um ativo que não existe")
-        void adicionandoInteressadoEmAtivoInexistente() throws Exception {
-
-            Ativo ativo = ativos.get(3);
-            Cliente cliente = clientes.get(2);
-
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-
-            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
-
-            String responseJsonString = driver.perform(
-                            patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), 999999))
-                                    .param("codigoAcesso", "123456")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(json))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
-
-            assertEquals("O ativo consultado nao existe!", resultado.getMessage());
-        }
-
-        @Test
-        @DisplayName("Quando tentar adicionar um interessado não cadastrado em um ativo")
-        void adicionandoInteressadoInexistenteEmAtivo() throws Exception {
-
-            Ativo ativo = ativos.get(3);
-
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-
-            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
-
-            String responseJsonString = driver.perform(
-                            patch(String.format("/usuario/%d/marcar-interesse/%d", 999999, ativo.getId()))
-                                    .param("codigoAcesso", "123456")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(json))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CustomErrorType resultado = objectMapper.readValue(responseJsonString, CustomErrorType.class);
-
-            assertEquals("O cliente consultado nao existe!", resultado.getMessage());
-        }
     }
+
+
+
 
     //US08
     @Nested
