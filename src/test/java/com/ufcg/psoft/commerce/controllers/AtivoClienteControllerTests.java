@@ -130,7 +130,8 @@ public class AtivoClienteControllerTests {
                 .tipo(tipo)
                 .descricao(nome)
                 .valor(valor)
-                .interessados(new ArrayList<>())
+                .interessadosCotacao(new ArrayList<>())
+                .interessadosDisponibilidade(new ArrayList<>())
                 .statusDisponibilidade(status)
                 .build()
         );
@@ -661,7 +662,7 @@ public class AtivoClienteControllerTests {
                             .content(json)).andExpect(status().isOk());
 
             Ativo ativoAtualizado = ativoRepository.findById(ativo.getId()).orElseThrow(Exception::new);
-            assertEquals(1, ativoAtualizado.getInteressados().size());
+            assertEquals(1, ativoAtualizado.getInteressadosCotacao().size());
 
         }
     }
@@ -686,7 +687,7 @@ public class AtivoClienteControllerTests {
             ativoSemInteressados = ativos.get(1);
             cliente = clientes.get(0);
 
-            ativoComInteressados.getInteressados().add(cliente.getId());
+            ativoComInteressados.getInteressadosDisponibilidade().add(cliente.getId());
             ativoComInteressados.setStatusDisponibilidade(StatusDisponibilidade.INDISPONIVEL);
             ativoRepository.save(ativoComInteressados);
 
@@ -722,7 +723,7 @@ public class AtivoClienteControllerTests {
             assertTrue(output.contains(cliente.getNome()), "Deve conter o nome do cliente na notificação");
             assertTrue(output.contains(ativoComInteressados.getNome()), "Deve conter o nome do ativo na notificação");
             assertTrue(output.contains("disponível"), "Deve indicar que o ativo está disponível");
-            assertEquals(0, ativoComInteressados.getInteressados().size());
+            assertEquals(0, ativoComInteressados.getInteressadosDisponibilidade().size());
         }
 
         @Test
@@ -732,7 +733,7 @@ public class AtivoClienteControllerTests {
             String output = ativarAtivo(cliente.getId(), ativoSemInteressados.getId(), false);
 
             assertFalse(output.contains("Notificação para:"), "Não deve imprimir notificação quando não há interessados");
-            assertEquals(0, ativoSemInteressados.getInteressados().size());
+            assertEquals(0, ativoSemInteressados.getInteressadosDisponibilidade().size());
         }
 
         @Test
@@ -742,7 +743,7 @@ public class AtivoClienteControllerTests {
             ativoComInteressados.setStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
             ativoRepository.save(ativoComInteressados);
 
-            assertEquals(1, ativoComInteressados.getInteressados().size(), "Lista de interessados deve continuar intacta ao desativar");
+            assertEquals(1, ativoComInteressados.getInteressadosDisponibilidade().size(), "Lista de interessados deve continuar intacta ao desativar");
 
             var perform = driver.perform(patch("/usuario/" + ativoComInteressados.getId() + "/ativar-desativar/" + ativoComInteressados.getId())
                     .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
@@ -751,7 +752,7 @@ public class AtivoClienteControllerTests {
             perform.andExpect(status().isOk());
 
             Ativo ativoAtualizado = ativoRepository.findById(ativoComInteressados.getId()).orElseThrow();
-            assertEquals(1, ativoAtualizado.getInteressados().size(), "Lista de interessados deve continuar intacta ao desativar");
+            assertEquals(1, ativoAtualizado.getInteressadosDisponibilidade().size(), "Lista de interessados deve continuar intacta ao desativar");
         }
 
         @Test

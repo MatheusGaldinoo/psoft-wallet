@@ -22,9 +22,11 @@ public interface AtivoService {
 
     void remover(Long id);
 
-    List<Long> recuperarInteressados(Long id);
+    List<Long> recuperarInteressadosCotacao(Long id);
 
-    void limparInteressados(Long id);
+    List<Long> recuperarInteressadosDisponibilidade(Long id);
+
+    void limparInteressadosDisponibilidade(Long id);
 
     AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao);
 

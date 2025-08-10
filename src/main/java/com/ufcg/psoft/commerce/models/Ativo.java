@@ -44,13 +44,31 @@ public class Ativo {
     @Column(nullable = false)
     private StatusDisponibilidade statusDisponibilidade;
 
-    @JsonProperty("interessados")
+    // Interessados na variação da cotação
+    @JsonProperty("interessadosCotacao")
     @ElementCollection
-    @CollectionTable(name = "ativo_interessados", joinColumns = @JoinColumn(name = "ativo_id"))
+    @CollectionTable(
+            name = "ativo_interessados_cotacao",
+            joinColumns = @JoinColumn(name = "ativo_id")
+    )
     @Column(name = "cliente_id")
-    private List<Long> interessados;
+    private List<Long> interessadosCotacao;
 
-    public void addInteressado(Long idCliente) {
-        this.interessados.add(idCliente);
+    // Interessados quando o ativo ficar disponível
+    @JsonProperty("interessadosDisponibilidade")
+    @ElementCollection
+    @CollectionTable(
+            name = "ativo_interessados_disponibilidade",
+            joinColumns = @JoinColumn(name = "ativo_id")
+    )
+    @Column(name = "cliente_id")
+    private List<Long> interessadosDisponibilidade;
+
+    public void addInteressadoCotacao(Long idCliente) {
+        this.interessadosCotacao.add(idCliente);
+    }
+
+    public void addInteressadoDisponibilidade(Long idCliente) {
+        this.interessadosDisponibilidade.add(idCliente);
     }
 }
