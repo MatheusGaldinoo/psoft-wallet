@@ -928,13 +928,25 @@ public class AtivoClienteControllerTests {
         @Test
         @DisplayName("Quando a cotação for atualizada com sucesso em 10% ou mais")
         void interessadosDevemSerNotificados() throws Exception {
-            Ativo ativo = ativos.get(3);
+
             Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
+            Ativo ativo = ativos.get(3);
+            Cliente cliente = clientes.get(0);
 
             AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-            ativoPostPutRequestDTO.setValor(120.0);
-
             String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
+
+            driver.perform(patch("/usuario/" + cliente.getId() + "/marcar-interesse/" + ativo.getId())
+                            .param("codigoAcesso", "123456")
+                            .content(json)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            ativoPostPutRequestDTO.setValor(120.0);
+            json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
+
             String responseJsonString = driver.perform(patch("/usuario/" + admin.getId() + "/atualizar-cotacao/" + ativo.getId())
                             .param("codigoAcesso", "123456")
                             .content(json)
@@ -944,16 +956,12 @@ public class AtivoClienteControllerTests {
                     .andReturn().getResponse().getContentAsString();
 
             AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, AtivoResponseDTO.class);
+            System.out.flush();
             String output = outContent.toString();
-            //String output = atualizarCotacao(admin.getId(), ativo.getId(), ativoPostPutRequestDTO, true);
-            //assertEquals(resultado.getValor(), 120);
-            //System.out.println("aaaaaaaaaaaaaa");
-            //System.out.println(output);
-            //assertEquals(output, "");
-            //assertTrue(output.contains("Ativo"), "Deve conter 'Ativo' na notificação");
+            assertEquals(resultado.getValor(), 120);
+            assertTrue(output.contains("Alerta"), "Deve conter 'Alerta' na notificação");
             assertTrue(output.contains("variou de cotação"), "Deve conter 'variou de cotação' na notificação");
-            //assertTrue(output.contains(ativo.getNome()), "Deve conter o nome do ativo na notificação");
-            //assertTrue(output.contains("%"), "Deve conter o símbolo de porcentagem");
+            assertTrue(output.contains(ativo.getNome()), "Deve conter o nome do ativo na notificação");
 
         }
 

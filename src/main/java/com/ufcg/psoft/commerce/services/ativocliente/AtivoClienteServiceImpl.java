@@ -111,10 +111,13 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         }
 
         if (variacaoPercentual >= 0.10) {
+
+            List<Long> interessados = ativoService.recuperarInteressadosCotacao(idAtivo);
+
             String mensagem = String.format("Ativo %s variou de cotação em %.2f%%",
                     ativoPostPutRequestDTO.getNome(),
                     variacaoPercentual * 100);
-            notificarInteressados(idAtivo, mensagem);
+            notificarInteressados(idAtivo, mensagem, interessados);
         }
 
         return ativoService.atualizarCotacao(idAtivo, novaCotacao);
@@ -127,16 +130,18 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         AtivoResponseDTO ativoAtualizado = ativoService.ativarOuDesativar(idAtivo);
 
         if (ativoAtualizado.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL) {
+
+            List<Long> interessados = ativoService.recuperarInteressadosDisponibilidade(idAtivo);
+
             String mensagem = String.format("O ativo '%s' agora está disponível para compra!", ativoAtualizado.getNome());
-            notificarInteressados(idAtivo, mensagem);
+            notificarInteressados(idAtivo, mensagem, interessados);
             ativoService.limparInteressadosDisponibilidade(idAtivo);
         }
 
         return ativoAtualizado;
     }
 
-    private void notificarInteressados(Long idAtivo, String mensagem) {
-        List<Long> interessados = ativoService.recuperarInteressadosDisponibilidade(idAtivo);
+    private void notificarInteressados(Long idAtivo, String mensagem, List<Long> interessados) {
 
         if (interessados == null || interessados.isEmpty()) {
             return;
