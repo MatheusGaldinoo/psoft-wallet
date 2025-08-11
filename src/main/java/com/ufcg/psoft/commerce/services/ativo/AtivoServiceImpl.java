@@ -102,16 +102,16 @@ public class AtivoServiceImpl implements AtivoService {
     }
 
     @Override
-    public void adicionarInteressado(Long idAtivo, Long idCliente) {
-
+    public void adicionarInteressadoCotacao(Long idAtivo, Long idCliente) {
         Ativo ativo = ativoRepository.findById(idAtivo).orElseThrow(AtivoNaoExisteException::new);
+        ativo.addInteressadoCotacao(idCliente);
+        ativoRepository.save(ativo);
+    }
 
-        if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL) {
-            ativo.addInteressadoCotacao(idCliente);
-        } else {
-            ativo.addInteressadoDisponibilidade(idCliente);
-        }
-
+    @Override
+    public void adicionarInteressadoDisponibilidade(Long idAtivo, Long idCliente) {
+        Ativo ativo = ativoRepository.findById(idAtivo).orElseThrow(AtivoNaoExisteException::new);
+        ativo.addInteressadoDisponibilidade(idCliente);
         ativoRepository.save(ativo);
     }
 
@@ -130,32 +130,15 @@ public class AtivoServiceImpl implements AtivoService {
     @Override
     public void limparInteressadosDisponibilidade(Long id) {
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
-
         ativo.getInteressadosDisponibilidade().clear();
-
         ativoRepository.save(ativo);
     }
 
-
     @Override
     public AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao) {
-
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
-
-        if (ativo.getTipo().getNomeTipo() != TipoAtivo.ACAO && ativo.getTipo().getNomeTipo() != TipoAtivo.CRIPTOMOEDA) {
-            throw new CotacaoNaoPodeSerAtualizadaException();
-        }
-
-        Double cotacaoAtual = ativo.getValor();
-        double variacaoPercentual = Math.abs((novaCotacao - cotacaoAtual) / cotacaoAtual);
-
-        if (variacaoPercentual < 0.01) {
-            throw new VariacaoMinimaDeCotacaoNaoAtingidaException();
-        }
-
         ativo.setValor(novaCotacao);
         ativoRepository.save(ativo);
-
         return modelMapper.map(ativo, AtivoResponseDTO.class);
     }
 }
