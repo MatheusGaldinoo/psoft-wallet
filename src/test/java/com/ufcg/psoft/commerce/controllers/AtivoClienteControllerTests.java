@@ -890,8 +890,89 @@ public class AtivoClienteControllerTests {
         }
     }
 
+    @Nested
+    @DisplayName("Testes para notificar interessados na cotação")
+    class NotificacaoInteressadosCotacao {
 
+        private final PrintStream originalOut = System.out;
+        private ByteArrayOutputStream outContent;
 
+        @BeforeEach
+        void setUp() {
+            outContent = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(outContent));
+        }
+
+        @AfterEach
+        void tearDown() {
+            System.setOut(originalOut);
+        }
+
+        private String atualizarCotacao(Long idAdmin, Long idAtivo, AtivoPostPutRequestDTO ativoDTO, boolean imprimir) throws Exception {
+            String json = objectMapper.writeValueAsString(ativoDTO);
+
+            var perform = driver.perform(patch("/usuario/" + idAdmin + "/atualizar-cotacao/" + idAtivo)
+                    .param("codigoAcesso", "123456")
+                    .content(json)
+                    .contentType(MediaType.APPLICATION_JSON));
+
+            if (imprimir) {
+                perform.andDo(print());
+            }
+
+            perform.andExpect(status().isOk());
+
+            return outContent.toString();
+        }
+
+        @Test
+        @DisplayName("Quando a cotação for atualizada com sucesso em 10% ou mais")
+        void interessadosDevemSerNotificados() throws Exception {
+            Ativo ativo = ativos.get(3);
+            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
+            ativoPostPutRequestDTO.setValor(120.0);
+
+            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
+            String responseJsonString = driver.perform(patch("/usuario/" + admin.getId() + "/atualizar-cotacao/" + ativo.getId())
+                            .param("codigoAcesso", "123456")
+                            .content(json)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, AtivoResponseDTO.class);
+            String output = outContent.toString();
+            //String output = atualizarCotacao(admin.getId(), ativo.getId(), ativoPostPutRequestDTO, true);
+            //assertEquals(resultado.getValor(), 120);
+            //System.out.println("aaaaaaaaaaaaaa");
+            //System.out.println(output);
+            //assertEquals(output, "");
+            //assertTrue(output.contains("Ativo"), "Deve conter 'Ativo' na notificação");
+            assertTrue(output.contains("variou de cotação"), "Deve conter 'variou de cotação' na notificação");
+            //assertTrue(output.contains(ativo.getNome()), "Deve conter o nome do ativo na notificação");
+            //assertTrue(output.contains("%"), "Deve conter o símbolo de porcentagem");
+
+        }
+
+        @Test
+        @DisplayName("Não deve notificar quando variação for menor que 10%")
+        void naoDeveNotificarVariacaoMenor() throws Exception {
+            Ativo ativo = ativos.get(3);
+            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
+
+            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
+            Double valorOriginal = ativo.getValor();
+            ativoPostPutRequestDTO.setValor(valorOriginal * 1.05);
+
+            String output = atualizarCotacao(admin.getId(), ativo.getId(), ativoPostPutRequestDTO, false);
+
+            assertFalse(output.contains("variou de cotação"), "Não deve notificar com variação < 10%");
+        }
+
+    }
 
     //US08
     @Nested

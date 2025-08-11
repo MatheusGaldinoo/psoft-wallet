@@ -104,7 +104,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
 
         Double cotacaoAtual = ativo.getValor();
         Double novaCotacao = ativoPostPutRequestDTO.getValor();
-        Double variacaoPercentual = Math.abs((cotacaoAtual - novaCotacao) / novaCotacao);
+        Double variacaoPercentual = Math.abs((cotacaoAtual - novaCotacao) / cotacaoAtual);
 
         if (variacaoPercentual < 0.01) {
             throw new VariacaoMinimaDeCotacaoNaoAtingidaException();
