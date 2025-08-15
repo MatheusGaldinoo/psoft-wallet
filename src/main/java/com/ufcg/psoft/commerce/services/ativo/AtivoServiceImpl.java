@@ -6,13 +6,10 @@ import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.exceptions.AtivoNaoExisteException;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
-import com.ufcg.psoft.commerce.models.Ativo;
+import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
-
-import com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
-import com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -90,15 +88,11 @@ public class AtivoServiceImpl implements AtivoService {
                 .map(AtivoResponseDTO::new).collect(Collectors.toList());
     }
 
-    private List<AtivoResponseDTO> listarPorNome(String nome) {
-        List<Ativo> ativos = ativoRepository.findByNomeContaining(nome);
-        return ativos.stream().map(AtivoResponseDTO::new).collect(Collectors.toList());
-    }
-
     @Override
     public AtivoResponseDTO recuperar(Long id) {
-        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
-        return new AtivoResponseDTO(ativo);
+        return ativoRepository.findById(id)
+                .map(AtivoResponseDTO::new)
+                .orElseThrow(AtivoNaoExisteException::new);
     }
 
     @Override

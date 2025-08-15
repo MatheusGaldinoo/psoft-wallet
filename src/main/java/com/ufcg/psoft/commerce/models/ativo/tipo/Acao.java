@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.models;
+package com.ufcg.psoft.commerce.models.ativo.tipo;
 
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 
@@ -10,10 +10,8 @@ import jakarta.persistence.DiscriminatorValue;
 @DiscriminatorValue("ACAO")
 public class Acao extends TipoDeAtivo{
 
-    public Acao() {}
-
-    public Double calcularDesconto(){
-        return 0.0;
+    public Acao() {
+        super.setNomeTipo(TipoAtivo.ACAO);
     }
 
     @Override

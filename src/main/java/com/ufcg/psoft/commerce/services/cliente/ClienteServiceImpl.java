@@ -5,7 +5,7 @@ import com.ufcg.psoft.commerce.exceptions.CodigoDeAcessoInvalidoException;
 import com.ufcg.psoft.commerce.repositories.ClienteRepository;
 import com.ufcg.psoft.commerce.dtos.cliente.ClientePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
-import com.ufcg.psoft.commerce.models.Cliente;
+import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

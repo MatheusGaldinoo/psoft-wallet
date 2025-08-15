@@ -1,33 +1,32 @@
 package com.ufcg.psoft.commerce.base;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.experimental.SuperBuilder;
-import org.springframework.stereotype.Component;
 
 @Entity
 @Data
 @SuperBuilder
-@Component
-@NoArgsConstructor
-@AllArgsConstructor
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor(access = AccessLevel.PROTECTED)
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "tipo_usuario")
 public abstract class Usuario {
 
-    @JsonProperty("id")
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @JsonProperty("id")
     private Long id;
 
+    @NotNull
     @JsonProperty("nome")
-    @Column(nullable = false)
     private String nome;
 
-    @JsonIgnore
-    @Column(nullable = false)
+    @NotNull
+    @JsonProperty(value = "codigoAcesso", access = JsonProperty.Access.WRITE_ONLY)
     private String codigoAcesso;
 }

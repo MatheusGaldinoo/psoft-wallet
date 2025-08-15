@@ -1,10 +1,9 @@
-package com.ufcg.psoft.commerce.models;
+package com.ufcg.psoft.commerce.models.ativo;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.List;
-import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;

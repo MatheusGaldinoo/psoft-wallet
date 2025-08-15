@@ -2,7 +2,7 @@ package com.ufcg.psoft.commerce.dtos.cliente;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
-import com.ufcg.psoft.commerce.models.Cliente;
+import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
