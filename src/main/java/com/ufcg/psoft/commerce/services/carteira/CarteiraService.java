@@ -1,16 +1,19 @@
 package com.ufcg.psoft.commerce.services.carteira;
 
+import com.ufcg.psoft.commerce.dtos.carteira.AtivoCarteiraResponseDTO;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public interface CarteiraService {
-    // TODO - Controle do saldo (adicionar, debitar e visualizar)
-    CarteiraResponseDTO adicionarBalanco(Long idCarteira, double valor);
-    CarteiraResponseDTO debitarBalanco(Long idCarteira, double valor);
-    // TODO - Controle do ativo (adição e remoção da 'quantidadeDeAtivo')
-    CarteiraResponseDTO adicionarQuantidadeAtivo(Long idCarteira, Long idAtivo);
-    // TODO - Controle de compra (adição e remoção de 'compras')
-    CarteiraResponseDTO adicionarCompra(Long idCarteira, Long idCompra);
-    CarteiraResponseDTO removerCompra(Long idCarteira, Long idCompra);
-    // TODO - Controle de resgate (adição e remoção de 'resgates')
+    void aplicarCompra(Long idCliente, Long idAtivo, double quantidade, double precoUnitario);
+
+    void validarBalancoSuficiente(Long idCliente, double valor);
+
+    void adicionarBalanco(Long idCliente, double valor);
+
+    void debitarBalanco(Long idCliente, double valor);
+
+    List<AtivoCarteiraResponseDTO> visualizarCarteira(Long idCliente);
 }

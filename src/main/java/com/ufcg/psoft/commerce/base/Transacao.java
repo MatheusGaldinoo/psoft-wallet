@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.ufcg.psoft.commerce.models.transacao.*;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 )
 @JsonSubTypes({
         @JsonSubTypes.Type(value = Compra.class, name = "COMPRA"),
+        @JsonSubTypes.Type(value = Compra.class, name = "RESGATE")
 })
 public abstract class Transacao {
 
@@ -34,6 +36,14 @@ public abstract class Transacao {
     @JsonProperty("id")
     private Long id;
 
+    @NotNull
+    @JsonProperty("cliente_id")
+    private Long idCliente;
+
+    @NotNull
+    @JsonProperty("ativo_id")
+    private Long idAtivo;
+
     @Positive
     @JsonProperty("quantidade")
     private double quantidade;
@@ -41,6 +51,10 @@ public abstract class Transacao {
     @Positive
     @JsonProperty("preco_unitario")
     private double precoUnitario;
+
+    @Positive
+    @JsonProperty("valor_total")
+    private double valorTotal;
 
     @JsonProperty("data_solicitacao")
     private LocalDateTime dataSolicitacao;

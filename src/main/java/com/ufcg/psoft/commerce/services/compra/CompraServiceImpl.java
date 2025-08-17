@@ -1,32 +1,50 @@
 package com.ufcg.psoft.commerce.services.compra;
 
-import com.ufcg.psoft.commerce.dtos.transacao.CompraPostPutRequestDTO;
-import com.ufcg.psoft.commerce.dtos.transacao.CompraResponseDTO;
-import com.ufcg.psoft.commerce.exceptions.BalancoInsuficienteException;
-import com.ufcg.psoft.commerce.models.carteira.Carteira;
+import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
+import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
+import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
+import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
+import com.ufcg.psoft.commerce.enums.EstadoCompra;
+import com.ufcg.psoft.commerce.exceptions.*;
 import com.ufcg.psoft.commerce.models.transacao.Compra;
-import com.ufcg.psoft.commerce.models.usuario.Cliente;
-import com.ufcg.psoft.commerce.repositories.ClienteRepository;
 import com.ufcg.psoft.commerce.repositories.CompraRepository;
+import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
 import com.ufcg.psoft.commerce.services.ativo.AtivoService;
+import com.ufcg.psoft.commerce.services.ativocliente.AtivoClienteService;
+import com.ufcg.psoft.commerce.services.carteira.CarteiraService;
 import com.ufcg.psoft.commerce.services.cliente.ClienteService;
+import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Optional;
+import java.time.LocalDateTime;
+import java.util.List;
 
 @Service
 public class CompraServiceImpl implements CompraService {
 
+    /* TODO - Compra tem muitos services.
+    *  O que pode ajudar é:
+    * (1) passar a lógica dos estados pra classe Compra; e
+    * (2) criar um package de utils contendo uma classe de validação dos dados,
+    * nem que exista uma classe de validação exclusiva de compra.
+    */
+
     @Autowired
-    AtivoService ativoService;
+    AdministradorService administradorService;
 
     @Autowired
     ClienteService clienteService;
 
     @Autowired
-    ClienteRepository clienteRepository;
+    AtivoService ativoService;
+
+    @Autowired
+    AtivoClienteService ativoClienteService;
+
+    @Autowired
+    CarteiraService carteiraService;
 
     @Autowired
     CompraRepository compraRepository;
@@ -35,30 +53,98 @@ public class CompraServiceImpl implements CompraService {
     ModelMapper modelMapper;
 
     @Override
-    public CompraResponseDTO comprarAtivo(CompraPostPutRequestDTO dto) {
-        Optional<Cliente> cliente = clienteRepository.findById(dto.getClienteId());
+    public CompraResponseDTO solicitarCompra(Long idCliente, CompraPostPutRequestDTO dto) {
+        clienteService.validarCodigoAcesso(idCliente, dto.getCodigoAcesso());
 
-        /* TODO - Validação da senha
-        if (!cliente.getCodigoAcesso().equals(dto.getCodigoAcesso)) {
-            throw new RuntimeException("Código de acesso inválido");
-        } */
+        AtivoResponseDTO ativo = ativoService.recuperar(dto.getIdAtivo());
 
-        Carteira carteira = cliente.get().getCarteira();
+        ativoClienteService.validarPermissaoCompra(idCliente, ativo.getId());
+        // TODO - corrigir codigo de erro 403 falando de marcar-interesse.
 
-        double precoTotal = dto.getQuantidade() * dto.getPrecoUnitario();
-        if (carteira.getBalanco() < precoTotal) {
-            throw new BalancoInsuficienteException("Balanco insuficiente na carteira");
-        }
+        ativoService.validarDisponibilidade(ativo.getId());
+        // TODO - Corrigir o código de erro (500 agr) e a exceção de quando tento solicitar algo indisponivel.
 
-        carteira.setBalanco(carteira.getBalanco() - precoTotal);
+        double precoUnitario = ativo.getValor();
+        double custoTotalCompra = precoUnitario * dto.getQuantidade();
 
-        // TODO - Atualizar o mapa 'quantidadeDeAtivo' em Carteira
+        carteiraService.validarBalancoSuficiente(idCliente, custoTotalCompra);
+        // TODO - corrigir codigo de erro 500.
 
-        Compra compra = modelMapper.map(dto, Compra.class);
-
-        carteira.getCompras().add(compra);
+        Compra compra = Compra.builder()
+                .idCliente(idCliente)
+                .idAtivo(dto.getIdAtivo())
+                .quantidade(dto.getQuantidade())
+                .precoUnitario(precoUnitario)
+                .valorTotal(custoTotalCompra)
+                .dataSolicitacao(LocalDateTime.now())
+                .estado(EstadoCompra.SOLICITADO)
+                .build();
 
         compraRepository.save(compra);
+
         return modelMapper.map(compra, CompraResponseDTO.class);
     }
+
+    @Transactional
+    @Override
+    public CompraResponseDTO executarCompra(Long idCliente, Long idCompra) {
+        Compra compra = compraRepository.findById(idCompra).orElseThrow(CompraNaoEncontradaException::new);
+
+        if (!compra.getIdCliente().equals(idCliente)) {
+            throw new CompraNaoPertenceAoClienteException();
+        }
+
+        if (compra.getEstado() != EstadoCompra.DISPONIVEL) {
+            throw new CompraNaoDisponivelException();
+        }
+
+        carteiraService.validarBalancoSuficiente(idCliente, compra.getValorTotal());
+        carteiraService.aplicarCompra(idCliente, compra.getIdAtivo(), compra.getQuantidade(), compra.getValorTotal());
+
+        compra.setEstado(EstadoCompra.COMPRADO);
+        compra.setEstado(EstadoCompra.EM_CARTEIRA);
+        compra.setDataFinalizacao(LocalDateTime.now());
+        compraRepository.save(compra);
+
+        return modelMapper.map(compra, CompraResponseDTO.class);
+    }
+
+    @Override
+    public CompraResponseDTO aprovarCompra(Long idCompra, String codigoAcesso) {
+        administradorService.validarCodigoAcesso(codigoAcesso);
+
+        Compra compra = compraRepository.findById(idCompra).orElseThrow(CompraNaoEncontradaException::new);
+        // TODO - mais uma vez, corrigir o código de erro para compras inexistentes.
+
+        if (compra.getEstado() != EstadoCompra.SOLICITADO) { throw new CompraNaoPendenteException(); }
+        // TODO - também corrigir para compras que já foram aprovadas, ou seja, não estão no estado 'SOLICITADO'.
+
+        ClienteResponseDTO clienteDto = clienteService.recuperar(compra.getIdCliente());
+
+        carteiraService.validarBalancoSuficiente(clienteDto.getId(), compra.getValorTotal());
+
+        compra.setEstado(EstadoCompra.DISPONIVEL);
+        compra.setDataFinalizacao(LocalDateTime.now());
+
+        compraRepository.save(compra);
+
+        // TODO - O cliente deve ser notificado da disponibilidade por meio de um print no terminal.
+
+        return modelMapper.map(compra, CompraResponseDTO.class);
+    }
+
+    @Override
+    public CompraResponseDTO recusarCompra(Long idCompra, String codigoAcesso) {
+        administradorService.validarCodigoAcesso(codigoAcesso);
+        Compra compra = compraRepository.findById(idCompra).orElseThrow(CompraNaoEncontradaException::new);
+        compraRepository.deleteById(idCompra);
+        return modelMapper.map(compra, CompraResponseDTO.class);
+    }
+
+    @Override
+    public List<CompraResponseDTO> listarComprasDoCliente(Long idCliente) {
+        List<Compra> compras = compraRepository.findByIdCliente(idCliente);
+        return compras.stream().map(compra -> modelMapper.map(compra, CompraResponseDTO.class)).toList();
+    }
+
 }

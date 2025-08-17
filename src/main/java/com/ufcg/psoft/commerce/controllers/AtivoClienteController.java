@@ -98,5 +98,6 @@ public class AtivoClienteController {
                 .status(HttpStatus.OK)
                 .body(ativoClienteService.visualizarAtivo(idCliente, idAtivo));
     }
+    // TODO - Visualizar um ativo fora do meu plano fala do 'marcar-interesse'?
 
 }

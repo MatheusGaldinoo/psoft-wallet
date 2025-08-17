@@ -1,9 +1,10 @@
-package com.ufcg.psoft.commerce.dtos.transacao;
+package com.ufcg.psoft.commerce.dtos.compra;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -15,26 +16,17 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CompraPostPutRequestDTO {
 
-    @JsonProperty("clienteId")
-    @NotNull(message = "Cliente obrigatorio")
-    private Long clienteId;
-
-    @JsonProperty("codigoAcesso")
+    @JsonProperty("cliente_codigo_acesso")
     @NotNull(message = "Codigo de acesso obrigatorio")
     @Pattern(regexp = "^\\d{6}$", message = "Codigo de acesso deve ter exatamente 6 digitos numericos")
     private String codigoAcesso;
 
-    @JsonProperty("ativoId")
+    @JsonProperty("ativo_id")
     @NotNull(message = "Ativo obrigatorio")
-    private Long ativoId;
+    private Long idAtivo;
 
     @JsonProperty("quantidade")
-    @NotNull(message = "Quantidade obrigatoria")
     @Min(value = 1, message = "Quantidade deve ser maior que zero")
-    private Double quantidade;
-
-    @NotNull
-    @JsonProperty("preco_unitario")
-    private Double precoUnitario;
+    private double quantidade;
 }
 

@@ -3,6 +3,7 @@ package com.ufcg.psoft.commerce.services.ativo;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
+import com.ufcg.psoft.commerce.exceptions.AtivoIndisponivelException;
 import com.ufcg.psoft.commerce.exceptions.AtivoNaoExisteException;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
@@ -17,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -82,7 +82,8 @@ public class AtivoServiceImpl implements AtivoService {
 
     @Override
     public List<AtivoResponseDTO> listarFiltrandoPorTipo(List<TipoAtivo> tiposParaFiltrar) {
-        List<Ativo> ativos = ativoRepository.findByStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
+        //List<Ativo> ativos = ativoRepository.findByStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
+        List<Ativo> ativos = ativoRepository.findAll();
         return ativos.stream()
                 .filter((ativo) -> !tiposParaFiltrar.contains(ativo.getTipo().getNomeTipo()))
                 .map(AtivoResponseDTO::new).collect(Collectors.toList());
@@ -134,5 +135,13 @@ public class AtivoServiceImpl implements AtivoService {
         ativo.setValor(novaCotacao);
         ativoRepository.save(ativo);
         return modelMapper.map(ativo, AtivoResponseDTO.class);
+    }
+
+    @Override
+    public void validarDisponibilidade(Long idAtivo) {
+        AtivoResponseDTO ativo = this.recuperar(idAtivo);
+        if (ativo.getStatusDisponibilidade() != StatusDisponibilidade.DISPONIVEL) {
+            throw new AtivoIndisponivelException();
+        }
     }
 }

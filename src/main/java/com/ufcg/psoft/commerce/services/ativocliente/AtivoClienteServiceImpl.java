@@ -163,4 +163,15 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
 
         return ativo;
     }
+
+    @Override
+    public void validarPermissaoCompra(Long idCliente, Long idAtivo) {
+        ClienteResponseDTO cliente = clienteService.recuperar(idCliente);
+
+        AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
+
+        if((cliente.getPlano() == TipoPlano.NORMAL) && (ativo.getTipo() != TipoAtivo.TESOURO_DIRETO)){
+            throw new ServicoNaoDisponivelParaPlanoException("Plano do cliente nao permite marcar interesse!");
+        }
+    }
 }

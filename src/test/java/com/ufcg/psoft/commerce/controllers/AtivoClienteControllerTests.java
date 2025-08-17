@@ -15,6 +15,7 @@ import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.models.ativo.tipo.Acao;
 import com.ufcg.psoft.commerce.models.ativo.tipo.CriptoMoeda;
 import com.ufcg.psoft.commerce.models.ativo.tipo.TesouroDireto;
+import com.ufcg.psoft.commerce.models.carteira.Carteira;
 import com.ufcg.psoft.commerce.models.usuario.Administrador;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import com.ufcg.psoft.commerce.repositories.AdministradorRepository;
