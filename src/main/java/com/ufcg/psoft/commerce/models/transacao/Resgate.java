@@ -2,9 +2,7 @@ package com.ufcg.psoft.commerce.models.transacao;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ufcg.psoft.commerce.base.Transacao;
-import com.ufcg.psoft.commerce.enums.EstadoCompra;
 import com.ufcg.psoft.commerce.enums.EstadoResgate;
-import com.ufcg.psoft.commerce.models.carteira.Carteira;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;

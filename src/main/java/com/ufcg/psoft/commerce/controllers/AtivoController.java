@@ -1,10 +1,8 @@
 package com.ufcg.psoft.commerce.controllers;
 
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
-import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.services.ativo.AtivoService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -20,7 +18,6 @@ public class AtivoController {
 
     @Autowired
     private AtivoService ativoService;
-
 
     @GetMapping()
     public ResponseEntity<List<AtivoResponseDTO>> listarAtivos() {

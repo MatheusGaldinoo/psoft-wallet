@@ -15,6 +15,7 @@ import lombok.*;
 
 @Entity
 @Data
+@NoArgsConstructor
 @Inheritance(strategy = InheritanceType.SINGLE_TABLE)
 @DiscriminatorColumn(name = "tipo", discriminatorType = DiscriminatorType.STRING)
 @JsonTypeInfo(
@@ -39,5 +40,4 @@ public abstract class TipoDeAtivo {
     @JsonProperty("nomeTipo")
     private TipoAtivo nomeTipo;
 
-    protected TipoDeAtivo() {};
 }
