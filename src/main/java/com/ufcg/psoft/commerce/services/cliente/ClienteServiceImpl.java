@@ -5,7 +5,7 @@ import com.ufcg.psoft.commerce.exceptions.CodigoDeAcessoInvalidoException;
 import com.ufcg.psoft.commerce.repositories.ClienteRepository;
 import com.ufcg.psoft.commerce.dtos.cliente.ClientePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
-import com.ufcg.psoft.commerce.models.Cliente;
+import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -54,6 +54,16 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     @Override
+    public Cliente buscarPorId(Long idCliente) {
+        return clienteRepository.findById(idCliente).orElseThrow(ClienteNaoExisteException::new);
+    }
+
+    @Override
+    public void salvar(Cliente cliente) {
+        clienteRepository.save(cliente);
+    }
+
+    @Override
     public List<ClienteResponseDTO> listar() {
         List<Cliente> clientes = clienteRepository.findAll();
         return clientes.stream()
@@ -67,7 +77,8 @@ public class ClienteServiceImpl implements ClienteService {
         return new ClienteResponseDTO(cliente);
     }
 
-    private void validarCodigoAcesso(Long id, String codigoAcesso) {
+    @Override
+    public void validarCodigoAcesso(Long id, String codigoAcesso) {
         Cliente cliente = clienteRepository.findById(id).orElseThrow(ClienteNaoExisteException::new);
         if (!cliente.getCodigoAcesso().equals(codigoAcesso)) { throw new CodigoDeAcessoInvalidoException(); }
     }

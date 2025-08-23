@@ -1,7 +1,7 @@
 package com.ufcg.psoft.commerce.repositories;
 
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
-import com.ufcg.psoft.commerce.models.Ativo;
+import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 

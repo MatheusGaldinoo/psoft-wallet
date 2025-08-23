@@ -6,14 +6,10 @@ import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
-import com.ufcg.psoft.commerce.exceptions.AtivoNaoExisteException;
 import com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
 import com.ufcg.psoft.commerce.exceptions.ServicoNaoDisponivelParaPlanoException;
 import com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
 import com.ufcg.psoft.commerce.loggers.Logger;
-import com.ufcg.psoft.commerce.models.Ativo;
-import com.ufcg.psoft.commerce.repositories.AtivoRepository;
-import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
 import com.ufcg.psoft.commerce.services.ativo.AtivoService;
 import com.ufcg.psoft.commerce.services.cliente.ClienteService;
@@ -35,12 +31,6 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
 
     @Autowired
     AdministradorService administradorService;
-
-    @Autowired
-    AtivoRepository ativoRepository;
-
-    @Autowired
-    TipoDeAtivoRepository tipoDeAtivoRepository;
 
     @Autowired
     ModelMapper modelMapper;
@@ -97,8 +87,8 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
 
         administradorService.validarCodigoAcesso(codigoAcesso);
 
-        Ativo ativo = ativoRepository.findById(idAtivo).orElseThrow(AtivoNaoExisteException::new);
-        if (ativo.getTipo().getNomeTipo() != TipoAtivo.ACAO && ativo.getTipo().getNomeTipo() != TipoAtivo.CRIPTOMOEDA) {
+        AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
+        if (ativo.getTipo() != TipoAtivo.ACAO && ativo.getTipo() != TipoAtivo.CRIPTOMOEDA) {
             throw new CotacaoNaoPodeSerAtualizadaException();
         }
 
@@ -117,7 +107,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
             String mensagem = String.format("Ativo %s variou de cotação em %.2f%%",
                     ativoPostPutRequestDTO.getNome(),
                     variacaoPercentual * 100);
-            notificarInteressados(idAtivo, mensagem, interessados);
+            notificarInteressados(mensagem, interessados);
         }
 
         return ativoService.atualizarCotacao(idAtivo, novaCotacao);
@@ -128,20 +118,21 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         administradorService.validarCodigoAcesso(codigoAcesso);
 
         AtivoResponseDTO ativoAtualizado = ativoService.ativarOuDesativar(idAtivo);
+        // TODO - Por que AtivoResponseDTO não retorna as listas de interessados? ativoAtualizado.getInteressados();
 
         if (ativoAtualizado.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL) {
 
             List<Long> interessados = ativoService.recuperarInteressadosDisponibilidade(idAtivo);
 
             String mensagem = String.format("O ativo '%s' agora está disponível para compra!", ativoAtualizado.getNome());
-            notificarInteressados(idAtivo, mensagem, interessados);
+            notificarInteressados(mensagem, interessados);
             ativoService.limparInteressadosDisponibilidade(idAtivo);
         }
 
         return ativoAtualizado;
     }
 
-    private void notificarInteressados(Long idAtivo, String mensagem, List<Long> interessados) {
+    private void notificarInteressados(String mensagem, List<Long> interessados) {
 
         if (interessados == null || interessados.isEmpty()) {
             return;
@@ -171,5 +162,16 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         }
 
         return ativo;
+    }
+
+    @Override
+    public void validarPermissaoCompra(Long idCliente, Long idAtivo) {
+        ClienteResponseDTO cliente = clienteService.recuperar(idCliente);
+
+        AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
+
+        if((cliente.getPlano() == TipoPlano.NORMAL) && (ativo.getTipo() != TipoAtivo.TESOURO_DIRETO)){
+            throw new ServicoNaoDisponivelParaPlanoException("Plano do cliente nao permite marcar interesse!");
+        }
     }
 }

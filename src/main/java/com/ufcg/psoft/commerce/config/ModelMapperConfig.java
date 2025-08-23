@@ -1,7 +1,7 @@
 package com.ufcg.psoft.commerce.config;
 
 import com.ufcg.psoft.commerce.dtos.cliente.ClientePostPutRequestDTO;
-import com.ufcg.psoft.commerce.models.Cliente;
+import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import org.modelmapper.ModelMapper;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

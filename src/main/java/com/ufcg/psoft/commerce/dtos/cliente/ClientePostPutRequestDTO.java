@@ -1,6 +1,7 @@
 package com.ufcg.psoft.commerce.dtos.cliente;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ufcg.psoft.commerce.dtos.carteira.CarteiraPostPutRequestDTO;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -32,4 +33,8 @@ public class ClientePostPutRequestDTO {
     @JsonProperty("plano")
     @NotNull(message = "Plano obrigatorio")
     private TipoPlano plano;
+
+    @JsonProperty("carteira")
+    @NotNull(message = "Carteira obrigatoria")
+    private CarteiraPostPutRequestDTO carteira;
 }

@@ -1,13 +1,15 @@
 package com.ufcg.psoft.commerce.controllers;
 
-import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
+import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
+import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.services.ativo.AtivoService;
-import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(
@@ -20,19 +22,15 @@ public class AtivoController {
     private AtivoService ativoService;
 
 
-    @GetMapping("")
-    public ResponseEntity<?> listarAtivos() {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(ativoService.listarTodos());
+    @GetMapping()
+    public ResponseEntity<List<AtivoResponseDTO>> listarAtivos() {
+        List<AtivoResponseDTO> ativos = ativoService.listarTodos();
+        return ResponseEntity.ok(ativos);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> recuperarAtivo(
-            @PathVariable Long id) {
-        return ResponseEntity
-                .status(HttpStatus.OK)
-                .body(ativoService.recuperar(id));
+    public ResponseEntity<AtivoResponseDTO> recuperarAtivo(@PathVariable Long id) {
+        return ResponseEntity.ok(ativoService.recuperar(id));
     }
 
 }

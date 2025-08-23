@@ -26,4 +26,6 @@ public interface AtivoClienteService {
     AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso);
 
     AtivoResponseDTO visualizarAtivo(Long idCliente, Long idAtivo);
+
+    void validarPermissaoCompra(Long idCliente, Long idAtivo);
 }

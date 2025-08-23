@@ -3,16 +3,14 @@ package com.ufcg.psoft.commerce.services.ativo;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
+import com.ufcg.psoft.commerce.exceptions.AtivoIndisponivelException;
 import com.ufcg.psoft.commerce.exceptions.AtivoNaoExisteException;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
-import com.ufcg.psoft.commerce.models.Ativo;
+import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
-
-import com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
-import com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
 
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,21 +82,18 @@ public class AtivoServiceImpl implements AtivoService {
 
     @Override
     public List<AtivoResponseDTO> listarFiltrandoPorTipo(List<TipoAtivo> tiposParaFiltrar) {
-        List<Ativo> ativos = ativoRepository.findByStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
+        //List<Ativo> ativos = ativoRepository.findByStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
+        List<Ativo> ativos = ativoRepository.findAll();
         return ativos.stream()
                 .filter((ativo) -> !tiposParaFiltrar.contains(ativo.getTipo().getNomeTipo()))
                 .map(AtivoResponseDTO::new).collect(Collectors.toList());
     }
 
-    private List<AtivoResponseDTO> listarPorNome(String nome) {
-        List<Ativo> ativos = ativoRepository.findByNomeContaining(nome);
-        return ativos.stream().map(AtivoResponseDTO::new).collect(Collectors.toList());
-    }
-
     @Override
     public AtivoResponseDTO recuperar(Long id) {
-        Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
-        return new AtivoResponseDTO(ativo);
+        return ativoRepository.findById(id)
+                .map(AtivoResponseDTO::new)
+                .orElseThrow(AtivoNaoExisteException::new);
     }
 
     @Override
@@ -140,5 +135,13 @@ public class AtivoServiceImpl implements AtivoService {
         ativo.setValor(novaCotacao);
         ativoRepository.save(ativo);
         return modelMapper.map(ativo, AtivoResponseDTO.class);
+    }
+
+    @Override
+    public void validarDisponibilidade(Long idAtivo) {
+        AtivoResponseDTO ativo = this.recuperar(idAtivo);
+        if (ativo.getStatusDisponibilidade() != StatusDisponibilidade.DISPONIVEL) {
+            throw new AtivoIndisponivelException();
+        }
     }
 }

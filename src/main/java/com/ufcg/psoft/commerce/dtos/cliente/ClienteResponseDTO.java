@@ -1,8 +1,9 @@
 package com.ufcg.psoft.commerce.dtos.cliente;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ufcg.psoft.commerce.dtos.carteira.CarteiraResponseDTO;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
-import com.ufcg.psoft.commerce.models.Cliente;
+import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import jakarta.persistence.Id;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -34,10 +35,17 @@ public class ClienteResponseDTO {
     @NotNull(message = "Plano obrigatorio")
     private TipoPlano plano;
 
+    @JsonProperty("carteira")
+    @NotNull(message = "Carteira obrigatoria")
+    private CarteiraResponseDTO carteira;
+
     public ClienteResponseDTO(Cliente cliente) {
         this.id = cliente.getId();
         this.nome = cliente.getNome();
         this.endereco = cliente.getEndereco();
         this.plano = cliente.getPlano();
+        if (cliente.getCarteira() != null) {
+            this.carteira = new CarteiraResponseDTO(cliente.getCarteira());
+        }
     }
 }

@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.models;
+package com.ufcg.psoft.commerce.models.ativo.tipo;
 
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 
@@ -10,10 +10,8 @@ import jakarta.persistence.DiscriminatorValue;
 @DiscriminatorValue("CRIPTOMOEDA")
 public class CriptoMoeda extends TipoDeAtivo{
 
-    public CriptoMoeda() {}
-
-    public Double calcularDesconto(){
-        return 0.0;
+    public CriptoMoeda() {
+        super.setNomeTipo(TipoAtivo.CRIPTOMOEDA);
     }
 
     @Override

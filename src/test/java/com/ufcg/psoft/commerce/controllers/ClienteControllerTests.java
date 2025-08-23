@@ -3,10 +3,13 @@ package com.ufcg.psoft.commerce.controllers;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ufcg.psoft.commerce.dtos.carteira.CarteiraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClientePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
 import com.ufcg.psoft.commerce.exceptions.CustomErrorType;
-import com.ufcg.psoft.commerce.models.Cliente;
+import com.ufcg.psoft.commerce.models.carteira.AtivoCarteira;
+import com.ufcg.psoft.commerce.models.carteira.Carteira;
+import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import com.ufcg.psoft.commerce.repositories.ClienteRepository;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,6 +19,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import static com.ufcg.psoft.commerce.enums.TipoPlano.NORMAL;
@@ -46,15 +50,23 @@ public class ClienteControllerTests {
 
     ClientePostPutRequestDTO clientePostPutRequestDTO;
 
+    CarteiraPostPutRequestDTO carteiraPostPutRequestDTO;
+
     @BeforeEach
     void setup() {
         // Object Mapper suporte para LocalDateTime
         objectMapper.registerModule(new JavaTimeModule());
+
+        Carteira carteira = Carteira.builder().balanco(0.0).ativos(new HashMap<Long, AtivoCarteira>()).build();
+
+        carteiraPostPutRequestDTO = CarteiraPostPutRequestDTO.builder().balanco(carteira.getBalanco()).build();
+
         cliente = clienteRepository.save(Cliente.builder()
                 .nome("Cliente Um da Silva")
                 .endereco("Rua dos Testes, 123")
                 .codigoAcesso("123456")
                 .plano(NORMAL)
+                .carteira(carteira)
                 .build()
         );
         clientePostPutRequestDTO = ClientePostPutRequestDTO.builder()
@@ -62,6 +74,7 @@ public class ClienteControllerTests {
                 .endereco(cliente.getEndereco())
                 .codigoAcesso(cliente.getCodigoAcesso())
                 .plano(cliente.getPlano())
+                .carteira(carteiraPostPutRequestDTO)
                 .build();
     }
 
@@ -427,17 +440,22 @@ public class ClienteControllerTests {
         void quandoBuscamosPorTodosClienteSalvos() throws Exception {
             // Arrange
             // Vamos ter 3 clientes no banco
+            Carteira carteira1 = Carteira.builder().balanco(0.0).build();
             Cliente cliente1 = Cliente.builder()
                     .nome("Cliente Dois Almeida")
                     .endereco("Av. da Pits A, 100")
                     .codigoAcesso("246810")
                     .plano(NORMAL)
+                    .carteira(carteira1)
                     .build();
+
+            Carteira carteira2 = Carteira.builder().balanco(0.0).build();
             Cliente cliente2 = Cliente.builder()
                     .nome("Cliente Três Lima")
                     .endereco("Distrito dos Testadores, 200")
                     .codigoAcesso("135790")
                     .plano(PREMIUM)
+                    .carteira(carteira2)
                     .build();
             clienteRepository.saveAll(Arrays.asList(cliente1, cliente2));
 

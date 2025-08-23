@@ -32,7 +32,6 @@ public class AtivoClienteController {
 
     @PutMapping("/{idUser}/atualizar-ativo/{idAtivo}")
     public ResponseEntity<?> atualizarAtivo(
-            @PathVariable Long idUser,
             @PathVariable Long idAtivo,
             @RequestParam String codigoAcesso,
             @RequestBody @Valid AtivoPostPutRequestDTO ativoPostPutRequestDto) {
@@ -43,7 +42,6 @@ public class AtivoClienteController {
 
     @PatchMapping("/{idUser}/ativar-desativar/{idAtivo}")
     public ResponseEntity<?> ativarOuDesativarAtivo(
-            @PathVariable Long idUser,
             @PathVariable Long idAtivo,
             @RequestParam String codigoAcesso) {
         return ResponseEntity
@@ -53,7 +51,6 @@ public class AtivoClienteController {
 
     @PatchMapping("/{idUser}/atualizar-cotacao/{idAtivo}")
     public ResponseEntity<?> atualizarCotacao(
-            @PathVariable Long idUser,
             @PathVariable Long idAtivo,
             @RequestParam String codigoAcesso,
             @RequestBody AtivoPostPutRequestDTO ativoPostPutRequestDTO) {
@@ -64,7 +61,6 @@ public class AtivoClienteController {
 
     @DeleteMapping("/{idUser}/excluir-ativo/{idAtivo}")
     public ResponseEntity<?> excluirAtivo(
-            @PathVariable Long idUser,
             @RequestParam String codigoAcesso,
             @PathVariable Long idAtivo){
         ativoClienteService.remover(idAtivo, codigoAcesso);
@@ -102,5 +98,6 @@ public class AtivoClienteController {
                 .status(HttpStatus.OK)
                 .body(ativoClienteService.visualizarAtivo(idCliente, idAtivo));
     }
+    // TODO - Visualizar um ativo fora do meu plano fala do 'marcar-interesse'?
 
 }

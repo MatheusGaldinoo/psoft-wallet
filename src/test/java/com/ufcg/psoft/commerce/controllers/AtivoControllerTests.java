@@ -7,7 +7,11 @@ import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
-import com.ufcg.psoft.commerce.models.*;
+import com.ufcg.psoft.commerce.models.ativo.Ativo;
+import com.ufcg.psoft.commerce.models.ativo.tipo.Acao;
+import com.ufcg.psoft.commerce.models.ativo.tipo.CriptoMoeda;
+import com.ufcg.psoft.commerce.models.ativo.tipo.TesouroDireto;
+import com.ufcg.psoft.commerce.models.usuario.Administrador;
 import com.ufcg.psoft.commerce.repositories.AdministradorRepository;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
@@ -65,7 +69,6 @@ public class AtivoControllerTests {
         administradorRepository.save(Administrador.builder()
                 .nome("Admin")
                 .codigoAcesso("123456")
-                .endereco("Rua nada")
                 .build());
 
 

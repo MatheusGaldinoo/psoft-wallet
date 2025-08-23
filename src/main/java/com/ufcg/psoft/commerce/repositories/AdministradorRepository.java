@@ -1,6 +1,6 @@
 package com.ufcg.psoft.commerce.repositories;
 
-import com.ufcg.psoft.commerce.models.Administrador;
+import com.ufcg.psoft.commerce.models.usuario.Administrador;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;

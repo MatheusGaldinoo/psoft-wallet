@@ -34,4 +34,5 @@ public interface AtivoService {
 
     void adicionarInteressadoDisponibilidade(Long idAtivo, Long idCliente);
 
+    void validarDisponibilidade(Long idAtivo);
 }
