@@ -18,7 +18,7 @@ public class CompraResponseDTO {
     @JsonProperty("id")
     private Long id;
 
-    @JsonProperty("estado")
+    @JsonProperty("estadoAtual")
     private EstadoCompra estado;
 
     @JsonProperty("cliente_id")
