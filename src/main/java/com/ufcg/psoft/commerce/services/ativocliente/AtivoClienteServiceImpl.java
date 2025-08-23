@@ -86,12 +86,12 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
 
         administradorService.validarCodigoAcesso(codigoAcesso);
 
-        AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
-        if (ativo.getTipo() != TipoAtivo.ACAO && ativo.getTipo() != TipoAtivo.CRIPTOMOEDA) {
+        AtivoResponseDTO ativoAtual = ativoService.recuperar(idAtivo);
+        if (ativoAtual.getTipo() != TipoAtivo.ACAO && ativoAtual.getTipo() != TipoAtivo.CRIPTOMOEDA) {
             throw new CotacaoNaoPodeSerAtualizadaException();
         }
 
-        Double cotacaoAtual = ativo.getValor();
+        Double cotacaoAtual = ativoAtual.getValor();
         Double novaCotacao = ativoPostPutRequestDTO.getValor();
         Double variacaoPercentual = Math.abs((cotacaoAtual - novaCotacao) / cotacaoAtual);
 
@@ -100,16 +100,14 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         }
 
         if (variacaoPercentual >= 0.10) {
-
             List<Long> interessados = ativoService.recuperarInteressadosCotacao(idAtivo);
-
             String mensagem = String.format("Ativo %s variou de cotação em %.2f%%",
                     ativoPostPutRequestDTO.getNome(),
                     variacaoPercentual * 100);
             notificarInteressados(mensagem, interessados);
         }
 
-        return ativoService.atualizarCotacao(idAtivo, novaCotacao);
+        return ativoService.alterar(idAtivo, ativoPostPutRequestDTO);
     }
 
     @Override
