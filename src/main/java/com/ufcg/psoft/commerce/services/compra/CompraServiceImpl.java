@@ -77,7 +77,6 @@ public class CompraServiceImpl implements CompraService {
                 .precoUnitario(precoUnitario)
                 .valorTotal(custoTotalCompra)
                 .dataSolicitacao(LocalDateTime.now())
-                .estado(EstadoCompra.SOLICITADO)
                 .build();
 
         compraRepository.save(compra);
@@ -94,15 +93,17 @@ public class CompraServiceImpl implements CompraService {
             throw new CompraNaoPertenceAoClienteException();
         }
 
-        if (compra.getEstado() != EstadoCompra.DISPONIVEL) {
+        if (compra.getEstadoAtual() != EstadoCompra.DISPONIVEL) {
             throw new CompraNaoDisponivelException();
         }
 
         carteiraService.validarBalancoSuficiente(idCliente, compra.getValorTotal());
         carteiraService.aplicarCompra(idCliente, compra.getIdAtivo(), compra.getQuantidade(), compra.getValorTotal());
 
-        compra.setEstado(EstadoCompra.COMPRADO);
-        compra.setEstado(EstadoCompra.EM_CARTEIRA);
+        compra.modificarEstadoCompra();
+
+        compra.modificarEstadoCompra();
+
         compra.setDataFinalizacao(LocalDateTime.now());
         compraRepository.save(compra);
 
@@ -116,14 +117,14 @@ public class CompraServiceImpl implements CompraService {
         Compra compra = compraRepository.findById(idCompra).orElseThrow(CompraNaoEncontradaException::new);
         // TODO - mais uma vez, corrigir o código de erro para compras inexistentes.
 
-        if (compra.getEstado() != EstadoCompra.SOLICITADO) { throw new CompraNaoPendenteException(); }
+        if (compra.getEstadoAtual() != EstadoCompra.SOLICITADO) { throw new CompraNaoPendenteException(); }
         // TODO - também corrigir para compras que já foram aprovadas, ou seja, não estão no estado 'SOLICITADO'.
 
         ClienteResponseDTO clienteDto = clienteService.recuperar(compra.getIdCliente());
 
         carteiraService.validarBalancoSuficiente(clienteDto.getId(), compra.getValorTotal());
 
-        compra.setEstado(EstadoCompra.DISPONIVEL);
+        compra.modificarEstadoCompra();
         compra.setDataFinalizacao(LocalDateTime.now());
 
         compraRepository.save(compra);

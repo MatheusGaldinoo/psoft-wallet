@@ -45,7 +45,7 @@ public class AtivoServiceImpl implements AtivoService {
 
         List<TipoDeAtivo> tiposDeAtivo = tipoDeAtivoRepository.findAll();
         TipoDeAtivo tipo = tiposDeAtivo.stream()
-                .filter((t) -> t.getNomeTipo() == ativoPostPutRequestDTO.getTipo())
+                .filter(t -> t.getNomeTipo() == ativoPostPutRequestDTO.getTipo())
                 .collect(Collectors.toList()).get(0);
         Ativo ativo = modelMapper.map(ativoPostPutRequestDTO, Ativo.class);
         ativo.setInteressadosCotacao(new ArrayList<>());
@@ -85,7 +85,7 @@ public class AtivoServiceImpl implements AtivoService {
         //List<Ativo> ativos = ativoRepository.findByStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
         List<Ativo> ativos = ativoRepository.findAll();
         return ativos.stream()
-                .filter((ativo) -> !tiposParaFiltrar.contains(ativo.getTipo().getNomeTipo()))
+                .filter(ativo -> !tiposParaFiltrar.contains(ativo.getTipo().getNomeTipo()))
                 .map(AtivoResponseDTO::new).collect(Collectors.toList());
     }
 

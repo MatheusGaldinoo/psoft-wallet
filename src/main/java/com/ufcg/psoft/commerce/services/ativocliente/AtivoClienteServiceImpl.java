@@ -78,8 +78,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
     @Override
     public AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso) {
         administradorService.validarCodigoAcesso(codigoAcesso);
-        AtivoResponseDTO ativo = ativoService.criar(ativoPostPutRequestDTO);
-        return ativo;
+        return ativoService.criar(ativoPostPutRequestDTO);
     }
 
     @Override

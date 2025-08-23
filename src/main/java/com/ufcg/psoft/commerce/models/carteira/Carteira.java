@@ -1,15 +1,11 @@
 package com.ufcg.psoft.commerce.models.carteira;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ufcg.psoft.commerce.models.transacao.Compra;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
-import lombok.experimental.SuperBuilder;
-
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Entity

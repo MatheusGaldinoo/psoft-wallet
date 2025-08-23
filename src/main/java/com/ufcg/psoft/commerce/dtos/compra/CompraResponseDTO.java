@@ -2,7 +2,6 @@ package com.ufcg.psoft.commerce.dtos.compra;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ufcg.psoft.commerce.enums.EstadoCompra;
-import com.ufcg.psoft.commerce.enums.TipoTransacao;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -19,7 +18,7 @@ public class CompraResponseDTO {
     @JsonProperty("id")
     private Long id;
 
-    @JsonProperty("estado")
+    @JsonProperty("estadoAtual")
     private EstadoCompra estado;
 
     @JsonProperty("cliente_id")

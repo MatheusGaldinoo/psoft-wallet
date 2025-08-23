@@ -3,14 +3,11 @@ package com.ufcg.psoft.commerce.models.usuario;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ufcg.psoft.commerce.base.Usuario;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
-import com.ufcg.psoft.commerce.models.carteira.AtivoCarteira;
 import com.ufcg.psoft.commerce.models.carteira.Carteira;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.util.HashMap;
 
 @Entity
 @Data
