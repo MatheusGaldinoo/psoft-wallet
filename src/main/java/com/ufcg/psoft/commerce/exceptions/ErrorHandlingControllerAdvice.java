@@ -65,4 +65,19 @@ public class ErrorHandlingControllerAdvice {
     public CustomErrorType onServicoNaoDisponivelParaPlanoException(ServicoNaoDisponivelParaPlanoException e) {
         return defaultCustomErrorTypeConstruct(e.getMessage());
     }
+
+    @ExceptionHandler(CompraNaoEncontradaException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public CustomErrorType onCompraNaoEncontrada(CompraNaoEncontradaException e) {
+        return defaultCustomErrorTypeConstruct(e.getMessage());
+    }
+
+    @ExceptionHandler(CompraNaoPendenteException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    @ResponseBody
+    public CustomErrorType onCompraNaoPendente(CompraNaoPendenteException e) {
+        return defaultCustomErrorTypeConstruct(e.getMessage());
+    }
+
 }
