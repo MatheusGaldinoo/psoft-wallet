@@ -88,7 +88,6 @@ public class CompraControllerTests {
     TesouroDireto tesouro;
     CriptoMoeda cripto;
     Acao acao;
-    private AtivoService ativoService;
 
     @BeforeEach
     void setup() {
@@ -983,9 +982,6 @@ public class CompraControllerTests {
         @DisplayName("Não deve confirmar compra em estado inválido (ex.: já comprada)")
         void confirmarCompraEstadoInvalido() throws Exception {
             Cliente cliente = clientes.get(0);
-
-            // Garantir saldo suficiente para a compra
-            // carteiraService.adicionarBalanco(cliente.getId(), 100.0); // ou o suficiente para cobrir a compra
 
             Compra compra = compraRepository.save(
                     Compra.builder()

@@ -15,14 +15,12 @@ import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.models.ativo.tipo.Acao;
 import com.ufcg.psoft.commerce.models.ativo.tipo.CriptoMoeda;
 import com.ufcg.psoft.commerce.models.ativo.tipo.TesouroDireto;
-import com.ufcg.psoft.commerce.models.carteira.Carteira;
 import com.ufcg.psoft.commerce.models.usuario.Administrador;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import com.ufcg.psoft.commerce.repositories.AdministradorRepository;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
 import com.ufcg.psoft.commerce.repositories.ClienteRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
-import com.ufcg.psoft.commerce.services.ativo.AtivoService;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.*;
 import org.modelmapper.ModelMapper;
@@ -84,7 +82,6 @@ public class AtivoClienteControllerTests {
     TesouroDireto tesouro;
     CriptoMoeda cripto;
     Acao acao;
-    private AtivoService ativoService;
 
     @BeforeEach
     void setup() {
@@ -179,7 +176,6 @@ public class AtivoClienteControllerTests {
 
             String ativoJson = objectMapper.writeValueAsString(ativo);
 
-            //TODO: create an exception for inexistent administrator
             Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
 
             String responseJsonString = driver.perform(
@@ -406,7 +402,7 @@ public class AtivoClienteControllerTests {
             assertEquals(3, ativosRetornados.size());
 
             List<String> nomesEsperados = ativos.stream()
-                    .filter((ativo) -> ativo.getTipo().getNomeTipo() == TipoAtivo.TESOURO_DIRETO)
+                    .filter(ativo -> ativo.getTipo().getNomeTipo() == TipoAtivo.TESOURO_DIRETO)
                     .map(Ativo::getNome).toList();
 
             List<String> nomesRetornados = ativosRetornados.stream().map(AtivoResponseDTO::getNome).toList();
@@ -966,7 +962,7 @@ public class AtivoClienteControllerTests {
             AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, AtivoResponseDTO.class);
             System.out.flush();
             String output = outContent.toString();
-            assertEquals(resultado.getValor(), 120);
+            assertEquals( 120, resultado.getValor());
             assertTrue(output.contains("Alerta"), "Deve conter 'Alerta' na notificação");
             assertTrue(output.contains("variou de cotação"), "Deve conter 'variou de cotação' na notificação");
             assertTrue(output.contains(ativo.getNome()), "Deve conter o nome do ativo na notificação");
