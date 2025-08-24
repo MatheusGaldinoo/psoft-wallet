@@ -1303,7 +1303,7 @@ public class CompraControllerTests {
             driver.perform(post("/clientes/" + idCliente + "/solicitar")
                             .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isServiceUnavailable());
+                    .andExpect(status().isConflict());
         }
 
         @Test
