@@ -3,7 +3,6 @@ package com.ufcg.psoft.commerce.controllers;
 import com.ufcg.psoft.commerce.dtos.carteira.AtivoCarteiraResponseDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
-import com.ufcg.psoft.commerce.exceptions.CompraNaoEncontradaException;
 import com.ufcg.psoft.commerce.services.carteira.CarteiraService;
 import com.ufcg.psoft.commerce.services.compra.CompraService;
 import jakarta.validation.Valid;
@@ -65,17 +64,4 @@ public class CompraController {
         return ResponseEntity.status(HttpStatus.OK).body(carteiraService.visualizarCarteira(idCliente));
     }
 
-    /*
-    @GetMapping("/clientes/{idCliente}/compras/{idCompra}")
-    public ResponseEntity<CompraResponseDTO> detalharCompra(@PathVariable Long idCliente, @PathVariable Long idCompra) {
-        return ResponseEntity.status(HttpStatus.OK).body(compraService.detalharCompra(idCliente, idCompra));
-    }
-
-    @GetMapping("/compras")
-    public ResponseEntity<List<CompraResponseDTO>> listarPorEstado(
-            @RequestParam(required = false) String estado
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(compraService.listarPorEstado(estado));
-    }
-     */
 }

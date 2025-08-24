@@ -482,7 +482,7 @@ public class ClienteControllerTests {
             // Arrange
             // Vamos ter o clientes no banco
             //Act
-            String responseDeleteJsonString = driver.perform(delete(URI_CLIENTES + "/" + cliente.getId())
+            driver.perform(delete(URI_CLIENTES + "/" + cliente.getId())
                             .contentType(MediaType.APPLICATION_JSON)
                             .param("codigoAcesso", cliente.getCodigoAcesso()))
                     .andExpect(status().isNoContent()) // Codigo 204

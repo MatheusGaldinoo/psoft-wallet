@@ -18,7 +18,6 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class AtivoServiceImpl implements AtivoService {
@@ -45,7 +44,7 @@ public class AtivoServiceImpl implements AtivoService {
         List<TipoDeAtivo> tiposDeAtivo = tipoDeAtivoRepository.findAll();
         TipoDeAtivo tipo = tiposDeAtivo.stream()
                 .filter(t -> t.getNomeTipo() == ativoPostPutRequestDTO.getTipo())
-                .collect(Collectors.toList()).get(0);
+                .toList().get(0);
         Ativo ativo = modelMapper.map(ativoPostPutRequestDTO, Ativo.class);
         ativo.setInteressadosCotacao(new ArrayList<>());
         ativo.setInteressadosDisponibilidade(new ArrayList<>());
@@ -76,16 +75,15 @@ public class AtivoServiceImpl implements AtivoService {
     @Override
     public List<AtivoResponseDTO> listarTodos() {
         List<Ativo> ativos = ativoRepository.findAll();
-        return ativos.stream().map(AtivoResponseDTO::new).collect(Collectors.toList());
+        return ativos.stream().map(AtivoResponseDTO::new).toList();
     }
 
     @Override
     public List<AtivoResponseDTO> listarFiltrandoPorTipo(List<TipoAtivo> tiposParaFiltrar) {
-        //List<Ativo> ativos = ativoRepository.findByStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
         List<Ativo> ativos = ativoRepository.findAll();
         return ativos.stream()
                 .filter(ativo -> !tiposParaFiltrar.contains(ativo.getTipo().getNomeTipo()))
-                .map(AtivoResponseDTO::new).collect(Collectors.toList());
+                .map(AtivoResponseDTO::new).toList();
     }
 
     @Override

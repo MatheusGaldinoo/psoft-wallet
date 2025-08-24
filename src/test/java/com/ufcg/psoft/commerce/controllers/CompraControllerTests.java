@@ -88,7 +88,6 @@ public class CompraControllerTests {
     TesouroDireto tesouro;
     CriptoMoeda cripto;
     Acao acao;
-    private AtivoService ativoService;
 
     @BeforeEach
     void setup() {
@@ -644,7 +643,7 @@ public class CompraControllerTests {
             assertEquals(2.0, compraResponseDTOAprovacao.getValorTotal());
             String output = outContent.toString();
             assertTrue(output.contains(
-                    String.format("User: %s\nAlerta: Sua compra do ativo '%s' foi aprovada",
+                    String.format("User: %s%nAlerta: Sua compra do ativo '%s' foi aprovada",
                             cliente.getNome(),
                             ativo.getNome())));
 
@@ -851,7 +850,7 @@ public class CompraControllerTests {
             assertEquals(2.0, compraResponseDTOAprovacao.getValorTotal());
             String output = outContent.toString();
             assertTrue(output.contains(
-                    String.format("User: %s\nAlerta: Sua compra do ativo '%s' foi recusada",
+                    String.format("User: %s%nAlerta: Sua compra do ativo '%s' foi recusada",
                             cliente.getNome(),
                             ativo.getNome())));
 
@@ -983,9 +982,6 @@ public class CompraControllerTests {
         @DisplayName("Não deve confirmar compra em estado inválido (ex.: já comprada)")
         void confirmarCompraEstadoInvalido() throws Exception {
             Cliente cliente = clientes.get(0);
-
-            // Garantir saldo suficiente para a compra
-            // carteiraService.adicionarBalanco(cliente.getId(), 100.0); // ou o suficiente para cobrir a compra
 
             Compra compra = compraRepository.save(
                     Compra.builder()
@@ -1303,7 +1299,7 @@ public class CompraControllerTests {
             driver.perform(post("/clientes/" + idCliente + "/solicitar")
                             .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isServiceUnavailable());
+                    .andExpect(status().isConflict());
         }
 
         @Test

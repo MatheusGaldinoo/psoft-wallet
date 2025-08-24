@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -48,7 +49,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
             tiposParaFiltrar.add(TipoAtivo.CRIPTOMOEDA);
             return ativoService.listarFiltrandoPorTipo(tiposParaFiltrar);
         } else {
-            return null;
+            return Collections.emptyList();
         }
 
     }
@@ -115,7 +116,6 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         administradorService.validarCodigoAcesso(codigoAcesso);
 
         AtivoResponseDTO ativoAtualizado = ativoService.ativarOuDesativar(idAtivo);
-        // TODO - Por que AtivoResponseDTO não retorna as listas de interessados? ativoAtualizado.getInteressados();
 
         if (ativoAtualizado.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL) {
 
@@ -155,7 +155,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
 
         if((cliente.getPlano() == TipoPlano.NORMAL) && (ativo.getTipo() != TipoAtivo.TESOURO_DIRETO)){
-            throw new ServicoNaoDisponivelParaPlanoException("Plano do cliente nao permite marcar interesse!");
+            throw new ServicoNaoDisponivelParaPlanoException("Plano do cliente nao permite visualizar ativo!");
         }
 
         return ativo;

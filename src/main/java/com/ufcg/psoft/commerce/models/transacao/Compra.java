@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ufcg.psoft.commerce.base.Transacao;
 import com.ufcg.psoft.commerce.enums.EstadoCompra;
 import com.ufcg.psoft.commerce.interfaces.estadocompra.*;
-import jakarta.annotation.PostConstruct;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;

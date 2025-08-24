@@ -128,7 +128,7 @@ public class AtivoControllerTests {
 
             assertEquals(ativo.getNome(), ativoRetornado.getNome());
             assertEquals(ativo.getValor(), ativoRetornado.getValor());
-            assertEquals(ativo.getTipo().getNomeTipo(), TipoAtivo.TESOURO_DIRETO);
+            assertEquals(TipoAtivo.TESOURO_DIRETO, ativo.getTipo().getNomeTipo());
         }
 
         @Test

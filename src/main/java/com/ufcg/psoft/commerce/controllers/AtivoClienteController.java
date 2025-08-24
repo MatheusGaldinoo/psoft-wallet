@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.controllers;
 
 
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
+import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.exceptions.ServicoNaoDisponivelParaPlanoException;
 import com.ufcg.psoft.commerce.services.ativocliente.AtivoClienteService;
 import jakarta.validation.Valid;
@@ -10,6 +11,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(
@@ -22,7 +25,7 @@ public class AtivoClienteController {
     private AtivoClienteService ativoClienteService;
 
     @PostMapping("/{idUser}/criar-ativo")
-    public ResponseEntity<?> criarAtivo(
+    public ResponseEntity<AtivoResponseDTO> criarAtivo(
             @RequestParam String codigoAcesso,
             @RequestBody @Valid AtivoPostPutRequestDTO ativoPostPutRequestDto) {
         return ResponseEntity
@@ -31,7 +34,7 @@ public class AtivoClienteController {
     }
 
     @PutMapping("/{idUser}/atualizar-ativo/{idAtivo}")
-    public ResponseEntity<?> atualizarAtivo(
+    public ResponseEntity<AtivoResponseDTO> atualizarAtivo(
             @PathVariable Long idAtivo,
             @RequestParam String codigoAcesso,
             @RequestBody @Valid AtivoPostPutRequestDTO ativoPostPutRequestDto) {
@@ -41,7 +44,7 @@ public class AtivoClienteController {
     }
 
     @PatchMapping("/{idUser}/ativar-desativar/{idAtivo}")
-    public ResponseEntity<?> ativarOuDesativarAtivo(
+    public ResponseEntity<AtivoResponseDTO> ativarOuDesativarAtivo(
             @PathVariable Long idAtivo,
             @RequestParam String codigoAcesso) {
         return ResponseEntity
@@ -50,7 +53,7 @@ public class AtivoClienteController {
     }
 
     @PatchMapping("/{idUser}/atualizar-cotacao/{idAtivo}")
-    public ResponseEntity<?> atualizarCotacao(
+    public ResponseEntity<AtivoResponseDTO> atualizarCotacao(
             @PathVariable Long idAtivo,
             @RequestParam String codigoAcesso,
             @RequestBody AtivoPostPutRequestDTO ativoPostPutRequestDTO) {
@@ -60,28 +63,28 @@ public class AtivoClienteController {
     }
 
     @DeleteMapping("/{idUser}/excluir-ativo/{idAtivo}")
-    public ResponseEntity<?> excluirAtivo(
+    public ResponseEntity<Void> excluirAtivo(
             @RequestParam String codigoAcesso,
             @PathVariable Long idAtivo){
         ativoClienteService.remover(idAtivo, codigoAcesso);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
-                .body("");
+                .build();
     }
 
     @PatchMapping("/{idCliente}/marcar-interesse/{idAtivo}")
-    public ResponseEntity<?> marcarInteresseAtivo(
+    public ResponseEntity<Void> marcarInteresseAtivo(
             @PathVariable Long idCliente,
             @PathVariable Long idAtivo) throws ServicoNaoDisponivelParaPlanoException {
 
         ativoClienteService.adicionarInteressado(idCliente, idAtivo);
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body("");
+                .build();
     }
 
     @GetMapping("/{idUser}/ativos-disponiveis")
-    public ResponseEntity<?> recuperarAtivo(
+    public ResponseEntity<List<AtivoResponseDTO>> recuperarAtivo(
             @PathVariable Long idUser) {
 
         return ResponseEntity
@@ -90,7 +93,7 @@ public class AtivoClienteController {
     }
 
     @GetMapping("/{idCliente}/visualizar-ativo/{idAtivo}")
-    public ResponseEntity<?> visualizarAtivo(
+    public ResponseEntity<AtivoResponseDTO> visualizarAtivo(
             @PathVariable Long idCliente,
             @PathVariable Long idAtivo) {
 
@@ -98,6 +101,5 @@ public class AtivoClienteController {
                 .status(HttpStatus.OK)
                 .body(ativoClienteService.visualizarAtivo(idCliente, idAtivo));
     }
-    // TODO - Visualizar um ativo fora do meu plano fala do 'marcar-interesse'?
 
 }

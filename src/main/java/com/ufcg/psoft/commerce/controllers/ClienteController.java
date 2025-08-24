@@ -1,6 +1,7 @@
 package com.ufcg.psoft.commerce.controllers;
 
 import com.ufcg.psoft.commerce.dtos.cliente.ClientePostPutRequestDTO;
+import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
 import com.ufcg.psoft.commerce.services.cliente.ClienteService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +9,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping(
@@ -20,7 +23,7 @@ public class ClienteController {
     ClienteService clienteService;
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> recuperarCliente(
+    public ResponseEntity<ClienteResponseDTO> recuperarCliente(
             @PathVariable Long id) {
         return ResponseEntity
                 .status(HttpStatus.OK)
@@ -28,7 +31,7 @@ public class ClienteController {
     }
 
     @GetMapping("")
-    public ResponseEntity<?> listarClientes(
+    public ResponseEntity<List<ClienteResponseDTO>> listarClientes(
             @RequestParam(required = false, defaultValue = "") String nome) {
 
         if (nome != null && !nome.isEmpty()) {
@@ -42,7 +45,7 @@ public class ClienteController {
     }
 
     @PostMapping()
-    public ResponseEntity<?> criarCliente(
+    public ResponseEntity<ClienteResponseDTO> criarCliente(
             @RequestBody @Valid ClientePostPutRequestDTO clientePostPutRequestDto) {
         return ResponseEntity
                 .status(HttpStatus.CREATED)
@@ -50,7 +53,7 @@ public class ClienteController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> atualizarCliente(
+    public ResponseEntity<ClienteResponseDTO> atualizarCliente(
             @PathVariable Long id,
             @RequestParam String codigoAcesso,
             @RequestBody @Valid ClientePostPutRequestDTO clientePostPutRequestDto) {
@@ -60,12 +63,12 @@ public class ClienteController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> excluirCliente(
+    public ResponseEntity<Void> excluirCliente(
             @PathVariable Long id,
             @RequestParam String codigoAcesso) {
         clienteService.remover(id, codigoAcesso);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
-                .body("");
+                .build();
     }
 }
