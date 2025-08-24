@@ -40,6 +40,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -921,6 +922,150 @@ public class CompraControllerTests {
         }
 
     }
+
+    @Nested
+    class ConfirmarCompra {
+
+        @Test
+        @DisplayName("Deve confirmar compra com sucesso e mover estado de DISPONIVEL → COMPRADO → EM_CARTEIRA")
+        void confirmarCompraComSucesso() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Compra compra = compraRepository.save(
+                    Compra.builder()
+                            .idCliente(cliente.getId())
+                            .idAtivo(ativos.get(0).getId())
+                            .quantidade(2.0)
+                            .precoUnitario(10.0)
+                            .valorTotal(20.0)
+                            .estadoAtual(EstadoCompra.DISPONIVEL)
+                            .build()
+            );
+
+            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.estadoAtual").value("EM_CARTEIRA"));
+        }
+
+        @Test
+        @DisplayName("Não deve confirmar compra inexistente")
+        void confirmarCompraInexistente() throws Exception {
+            Cliente cliente = clientes.get(0);
+
+            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/9999"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("Não deve confirmar compra que não pertence ao cliente")
+        void confirmarCompraOutroCliente() throws Exception {
+            Cliente cliente1 = clientes.get(0);
+            Cliente cliente2 = clientes.get(1);
+
+            Compra compra = compraRepository.save(
+                    Compra.builder()
+                            .idCliente(cliente2.getId())
+                            .idAtivo(ativos.get(0).getId())
+                            .quantidade(1.0)
+                            .precoUnitario(5.0)
+                            .valorTotal(5.0)
+                            .estadoAtual(EstadoCompra.DISPONIVEL)
+                            .build()
+            );
+
+            driver.perform(patch("/clientes/" + cliente1.getId() + "/finalizar/" + compra.getId()))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("Não deve confirmar compra em estado inválido (ex.: já comprada)")
+        void confirmarCompraEstadoInvalido() throws Exception {
+            Cliente cliente = clientes.get(0);
+
+            // Garantir saldo suficiente para a compra
+            // carteiraService.adicionarBalanco(cliente.getId(), 100.0); // ou o suficiente para cobrir a compra
+
+            Compra compra = compraRepository.save(
+                    Compra.builder()
+                            .idCliente(cliente.getId())
+                            .idAtivo(ativos.get(0).getId())
+                            .quantidade(1.0)
+                            .precoUnitario(5.0)
+                            .valorTotal(5.0)
+                            .estadoAtual(EstadoCompra.COMPRADO)
+                            .build()
+            );
+
+            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("Deve confirmar compra se o saldo for exatamente igual ao valor da compra")
+        void confirmarCompraSaldoExato() throws Exception {
+            Cliente cliente = clientes.get(0);
+            cliente.getCarteira().setBalanco(20.0);
+            clienteRepository.save(cliente);
+
+            Compra compra = compraRepository.save(
+                    Compra.builder()
+                            .idCliente(cliente.getId())
+                            .idAtivo(ativos.get(0).getId())
+                            .quantidade(2.0)
+                            .precoUnitario(10.0)
+                            .valorTotal(20.0)
+                            .estadoAtual(EstadoCompra.DISPONIVEL)
+                            .build()
+            );
+
+            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.estadoAtual").value("EM_CARTEIRA"));
+        }
+
+        @Test
+        @DisplayName("Não deve confirmar compra se o cliente não tiver saldo suficiente")
+        void confirmarCompraSaldoInsuficiente() throws Exception {
+            Cliente cliente = clientes.get(0);
+            cliente.getCarteira().setBalanco(1.0);
+            clienteRepository.save(cliente);
+
+            Compra compra = compraRepository.save(
+                    Compra.builder()
+                            .idCliente(cliente.getId())
+                            .idAtivo(ativos.get(0).getId())
+                            .quantidade(10.0)
+                            .precoUnitario(100.0)
+                            .valorTotal(1000.0)
+                            .estadoAtual(EstadoCompra.DISPONIVEL)
+                            .build()
+            );
+
+            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+                    .andExpect(status().isUnprocessableEntity());
+        }
+
+        @Test
+        @DisplayName("Não deve confirmar compra em estado SOLICITADO")
+        void confirmarCompraSolicitado() throws Exception {
+            Cliente cliente = clientes.get(0);
+
+            Compra compra = compraRepository.save(
+                    Compra.builder()
+                            .idCliente(cliente.getId())
+                            .idAtivo(ativos.get(0).getId())
+                            .quantidade(1.0)
+                            .precoUnitario(4.0)
+                            .valorTotal(4.0)
+                            .estadoAtual(EstadoCompra.SOLICITADO)
+                            .build()
+            );
+
+            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
 
 
 }
