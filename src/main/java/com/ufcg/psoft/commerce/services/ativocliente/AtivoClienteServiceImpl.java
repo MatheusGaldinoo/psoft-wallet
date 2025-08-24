@@ -116,7 +116,6 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         administradorService.validarCodigoAcesso(codigoAcesso);
 
         AtivoResponseDTO ativoAtualizado = ativoService.ativarOuDesativar(idAtivo);
-        // TODO - Por que AtivoResponseDTO não retorna as listas de interessados? ativoAtualizado.getInteressados();
 
         if (ativoAtualizado.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL) {
 
