@@ -7,6 +7,7 @@ import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
+import com.ufcg.psoft.commerce.enums.EstadoCompra;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
 import com.ufcg.psoft.commerce.models.ativo.Ativo;
@@ -19,6 +20,7 @@ import com.ufcg.psoft.commerce.models.usuario.Administrador;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import com.ufcg.psoft.commerce.repositories.*;
 import com.ufcg.psoft.commerce.services.ativo.AtivoService;
+import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.*;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,10 +29,13 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -41,8 +46,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @DisplayName("Testes do controlador de Compra")
 public class CompraControllerTests {
-
-    final String URI_CLIENTES = "/usuario";
 
     final String URI_COMPRAS_CLIENTES = "/clientes";
 
@@ -493,8 +496,8 @@ public class CompraControllerTests {
             String compraSolicitacaoJson = objectMapper.writeValueAsString(compraSolicitacao);
 
             driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(compraSolicitacaoJson))
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(compraSolicitacaoJson))
                     .andExpect(status().isCreated())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -578,5 +581,346 @@ public class CompraControllerTests {
         }
 
     }
+
+    @Nested
+    @Transactional
+    class AprovarCompra {
+
+        private final PrintStream originalOut = System.out;
+        private ByteArrayOutputStream outContent;
+
+        @BeforeEach
+        void setUp() {
+            outContent = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(outContent));
+        }
+
+        @AfterEach
+        void tearDown() {
+            System.setOut(originalOut);
+        }
+
+        @Test
+        @DisplayName("Quando o admin aprova uma compra com sucesso.")
+        void aprovarCompraComSucessoTest() throws Exception {
+
+            Cliente cliente = clienteRepository.findByNomeContaining("Cliente1").get(0);
+            Ativo ativo = ativoRepository.findByNomeContaining("Ativo1").get(0);
+
+            CompraPostPutRequestDTO compraDTO = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(cliente.getCodigoAcesso())
+                    .idAtivo(ativo.getId())
+                    .quantidade(2.0).build();
+
+            System.out.println(ativoRepository.findAll());
+            String json = objectMapper.writeValueAsString(compraDTO);
+
+            String responseJsonStringSolicitacao = driver.perform(
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isCreated())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
+
+            assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
+            assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
+
+            String responseJsonStringAprovacao = driver.perform(
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
+                                    .param("codigoAcesso", "123456"))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO compraResponseDTOAprovacao = objectMapper.readValue(responseJsonStringAprovacao, CompraResponseDTO.class);
+
+            assertEquals(EstadoCompra.DISPONIVEL, compraResponseDTOAprovacao.getEstado());
+            assertEquals(2.0, compraResponseDTOAprovacao.getValorTotal());
+            String output = outContent.toString();
+            assertTrue(output.contains(
+                    String.format("User: %s\nAlerta: Sua compra do ativo '%s' foi aprovada",
+                            cliente.getNome(),
+                            ativo.getNome())));
+
+        }
+
+        @Test
+        @DisplayName("Quando o admin com acesso invalido tenta aprovar uma compra.")
+        void aprovarCompraComAcessoInvalidoTest() throws Exception {
+
+            Cliente cliente = clienteRepository.findByNomeContaining("Cliente1").get(0);
+            Ativo ativo = ativoRepository.findByNomeContaining("Ativo1").get(0);
+
+            CompraPostPutRequestDTO compraDTO = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(cliente.getCodigoAcesso())
+                    .idAtivo(ativo.getId())
+                    .quantidade(2.0).build();
+            String json = objectMapper.writeValueAsString(compraDTO);
+
+            String responseJsonStringSolicitacao = driver.perform(
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isCreated())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
+
+            assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
+            assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
+
+            driver.perform(
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
+                                    .param("codigoAcesso", "000000"))
+                    .andExpect(status().isBadRequest());
+
+        }
+
+        @Test
+        @DisplayName("Quando o admin tenta aprovar uma compra inexistente.")
+        void aprovarCompraInexistente() throws Exception {
+
+            Cliente cliente = clienteRepository.findByNomeContaining("Cliente1").get(0);
+            Ativo ativo = ativoRepository.findByNomeContaining("Ativo1").get(0);
+
+            CompraPostPutRequestDTO compraDTO = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(cliente.getCodigoAcesso())
+                    .idAtivo(ativo.getId())
+                    .quantidade(2.0).build();
+            String json = objectMapper.writeValueAsString(compraDTO);
+
+            String responseJsonStringSolicitacao = driver.perform(
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isCreated())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
+
+            assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
+            assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
+
+            driver.perform(
+                            patch(URI_COMPRAS + "/" + 123L + "/aprovar")
+                                    .param("codigoAcesso", "123456"))
+                    .andExpect(status().isNotFound());
+
+        }
+
+        @Test
+        @DisplayName("Quando o admin tenta aprovar uma compra que não tem estado SOLICITADO.")
+        void aprovarCompraForaDoEstadoSolicitado() throws Exception {
+
+            Cliente cliente = clienteRepository.findByNomeContaining("Cliente1").get(0);
+            Ativo ativo = ativoRepository.findByNomeContaining("Ativo1").get(0);
+
+            CompraPostPutRequestDTO compraDTO = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(cliente.getCodigoAcesso())
+                    .idAtivo(ativo.getId())
+                    .quantidade(2.0).build();
+            String json = objectMapper.writeValueAsString(compraDTO);
+
+            String responseJsonStringSolicitacao = driver.perform(
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isCreated())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
+
+            assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
+            assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
+
+            driver.perform(
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
+                                    .param("codigoAcesso", "123456"))
+                    .andExpect(status().isOk());
+
+            driver.perform(
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
+                                    .param("codigoAcesso", "123456"))
+                    .andExpect(status().isForbidden());
+
+        }
+
+        @Test
+        @DisplayName("Quando o admin tenta aprovar uma compra de um cliente com balanço insuficiente.")
+        void aprovarCompraComBalancoInsuficiente() throws Exception {
+
+            Cliente cliente = clienteRepository.findByNomeContaining("Cliente1").get(0);
+            Ativo ativo = ativoRepository.findByNomeContaining("Ativo1").get(0);
+
+            CompraPostPutRequestDTO compraDTO = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(cliente.getCodigoAcesso())
+                    .idAtivo(ativo.getId())
+                    .quantidade(2.0).build();
+            String json = objectMapper.writeValueAsString(compraDTO);
+
+            String responseJsonStringSolicitacao = driver.perform(
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isCreated())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
+
+            assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
+            assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
+
+            cliente.getCarteira().setBalanco(0);
+            clienteRepository.save(cliente);
+
+            driver.perform(
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
+                                    .param("codigoAcesso", "123456"))
+                    .andExpect(status().isUnprocessableEntity());
+
+        }
+
+    }
+
+    @Nested
+    @Transactional
+    class RecusarCompra {
+
+        private final PrintStream originalOut = System.out;
+        private ByteArrayOutputStream outContent;
+
+        @BeforeEach
+        void setUp() {
+            outContent = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(outContent));
+        }
+
+        @AfterEach
+        void tearDown() {
+            System.setOut(originalOut);
+        }
+
+        @Test
+        @DisplayName("Quando o admin recusa uma compra com sucesso.")
+        void recusarCompraComSucessoTest() throws Exception {
+
+            Cliente cliente = clienteRepository.findByNomeContaining("Cliente1").get(0);
+            Ativo ativo = ativoRepository.findByNomeContaining("Ativo1").get(0);
+
+            CompraPostPutRequestDTO compraDTO = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(cliente.getCodigoAcesso())
+                    .idAtivo(ativo.getId())
+                    .quantidade(2.0).build();
+
+            System.out.println(ativoRepository.findAll());
+            String json = objectMapper.writeValueAsString(compraDTO);
+
+            String responseJsonStringSolicitacao = driver.perform(
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isCreated())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
+
+            assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
+            assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
+
+            String responseJsonStringAprovacao = driver.perform(
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/recusar")
+                                    .param("codigoAcesso", "123456"))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO compraResponseDTOAprovacao = objectMapper.readValue(responseJsonStringAprovacao, CompraResponseDTO.class);
+
+            assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOAprovacao.getEstado());
+            assertEquals(2.0, compraResponseDTOAprovacao.getValorTotal());
+            String output = outContent.toString();
+            assertTrue(output.contains(
+                    String.format("User: %s\nAlerta: Sua compra do ativo '%s' foi recusada",
+                            cliente.getNome(),
+                            ativo.getNome())));
+
+        }
+
+        @Test
+        @DisplayName("Quando o admin com acesso invalido tenta recusar uma compra.")
+        void recusarCompraComAcessoInvalidoTest() throws Exception {
+
+            Cliente cliente = clienteRepository.findByNomeContaining("Cliente1").get(0);
+            Ativo ativo = ativoRepository.findByNomeContaining("Ativo1").get(0);
+
+            CompraPostPutRequestDTO compraDTO = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(cliente.getCodigoAcesso())
+                    .idAtivo(ativo.getId())
+                    .quantidade(2.0).build();
+            String json = objectMapper.writeValueAsString(compraDTO);
+
+            String responseJsonStringSolicitacao = driver.perform(
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isCreated())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
+
+            assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
+            assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
+
+            driver.perform(
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/recusar")
+                                    .param("codigoAcesso", "000000"))
+                    .andExpect(status().isBadRequest());
+
+        }
+
+        @Test
+        @DisplayName("Quando o admin tenta recusar uma compra inexistente.")
+        void recusarCompraInexistente() throws Exception {
+
+            Cliente cliente = clienteRepository.findByNomeContaining("Cliente1").get(0);
+            Ativo ativo = ativoRepository.findByNomeContaining("Ativo1").get(0);
+
+            CompraPostPutRequestDTO compraDTO = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(cliente.getCodigoAcesso())
+                    .idAtivo(ativo.getId())
+                    .quantidade(2.0).build();
+            String json = objectMapper.writeValueAsString(compraDTO);
+
+            String responseJsonStringSolicitacao = driver.perform(
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(json))
+                    .andExpect(status().isCreated())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
+
+            assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
+            assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
+
+            driver.perform(
+                            patch(URI_COMPRAS + "/" + 123L + "/recusar")
+                                    .param("codigoAcesso", "123456"))
+                    .andExpect(status().isNotFound());
+
+        }
+
+    }
+
 
 }
