@@ -444,8 +444,12 @@ public class AtivoClienteControllerTests {
             assertAll(
                     () -> assertEquals(ativo.getId(), resultado.getId()),
                     () -> assertEquals(110.0, resultado.getValor()),
-                    () -> assertEquals(ativo.getNome(), resultado.getNome())
+                    () -> assertEquals(ativo.getNome(), resultado.getNome()),
+                    () -> assertEquals(ativo.getDescricao(), resultado.getDescricao()),
+                    () -> assertEquals(ativo.getTipo().getNomeTipo(), resultado.getTipo()),
+                    () -> assertEquals(ativo.getStatusDisponibilidade(), resultado.getStatusDisponibilidade())
             );
+
         }
 
         @Test

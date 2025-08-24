@@ -28,8 +28,6 @@ public interface AtivoService {
 
     void limparInteressadosDisponibilidade(Long id);
 
-    AtivoResponseDTO atualizarCotacao(Long id, Double novaCotacao);
-
     void adicionarInteressadoCotacao(Long idAtivo, Long idCliente);
 
     void adicionarInteressadoDisponibilidade(Long idAtivo, Long idCliente);

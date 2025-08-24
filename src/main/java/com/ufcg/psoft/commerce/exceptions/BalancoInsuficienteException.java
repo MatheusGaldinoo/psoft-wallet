@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
 public class BalancoInsuficienteException extends RuntimeException {
+
     public BalancoInsuficienteException() {
         super("Balanco insuficiente!");
     }

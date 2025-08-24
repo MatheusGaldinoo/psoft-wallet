@@ -55,10 +55,10 @@ public class CompraServiceImpl implements CompraService {
     ModelMapper modelMapper;
 
     @Override
-    public CompraResponseDTO solicitarCompra(Long idCliente, CompraPostPutRequestDTO dto) {
-        clienteService.validarCodigoAcesso(idCliente, dto.getCodigoAcesso());
+    public CompraResponseDTO solicitarCompra(Long idCliente, String codigoAcesso, Long idAtivo, double quantidade) {
+        clienteService.validarCodigoAcesso(idCliente, codigoAcesso);
 
-        AtivoResponseDTO ativo = ativoService.recuperar(dto.getIdAtivo());
+        AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
 
         // 403 status code if forbidden
         ativoClienteService.validarPermissaoCompra(idCliente, ativo.getId());
@@ -68,15 +68,15 @@ public class CompraServiceImpl implements CompraService {
 
 
         double precoUnitario = ativo.getValor();
-        double custoTotalCompra = precoUnitario * dto.getQuantidade();
+        double custoTotalCompra = precoUnitario * quantidade;
 
         // 422 status code if not enough credit
         carteiraService.validarBalancoSuficiente(idCliente, custoTotalCompra);
 
         Compra compra = Compra.builder()
                 .idCliente(idCliente)
-                .idAtivo(dto.getIdAtivo())
-                .quantidade(dto.getQuantidade())
+                .idAtivo(idAtivo)
+                .quantidade(quantidade)
                 .precoUnitario(precoUnitario)
                 .valorTotal(custoTotalCompra)
                 .dataSolicitacao(LocalDateTime.now())
