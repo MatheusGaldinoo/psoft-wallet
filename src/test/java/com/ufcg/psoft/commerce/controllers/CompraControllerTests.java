@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
+import com.ufcg.psoft.commerce.dtos.carteira.AtivoCarteiraResponseDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
 import com.ufcg.psoft.commerce.enums.EstadoCompra;
@@ -14,6 +15,7 @@ import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.models.ativo.tipo.Acao;
 import com.ufcg.psoft.commerce.models.ativo.tipo.CriptoMoeda;
 import com.ufcg.psoft.commerce.models.ativo.tipo.TesouroDireto;
+import com.ufcg.psoft.commerce.models.carteira.AtivoCarteira;
 import com.ufcg.psoft.commerce.models.carteira.Carteira;
 import com.ufcg.psoft.commerce.models.transacao.Compra;
 import com.ufcg.psoft.commerce.models.usuario.Administrador;
@@ -34,8 +36,8 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -1063,6 +1065,234 @@ public class CompraControllerTests {
 
             driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
                     .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("Testes para visualizar carteira")
+    class VisualizarCarteira {
+
+        @Test
+        @DisplayName("Deve retornar a carteira do cliente com ativos")
+        void quandoCarteiraPossuiAtivos() throws Exception {
+            Long idCliente = clientes.get(0).getId();
+
+            String responseJsonString = driver.perform(get("/clientes/" + idCliente + "/visualizar-carteira"))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<AtivoCarteiraResponseDTO> resultado = objectMapper
+                    .readValue(responseJsonString, objectMapper.getTypeFactory()
+                            .constructCollectionType(List.class, AtivoCarteiraResponseDTO.class));
+
+            Carteira carteira = clientes.get(0).getCarteira();
+
+            assertAll(
+                    () -> assertEquals(carteira.getAtivos().size(), resultado.size()),
+                    () -> resultado.forEach(dto -> {
+                        Ativo ativo = ativoRepository.findById(dto.getIdAtivo()).orElseThrow();
+                        AtivoCarteira ativoCarteira = carteira.getAtivos().get(dto.getIdAtivo());
+
+                        assertAll(
+                                () -> assertEquals(ativo.getId(), dto.getIdAtivo()),
+                                () -> assertEquals(ativo.getTipo().getNomeTipo(), dto.getTipo()),
+                                () -> assertEquals(ativoCarteira.getQuantidade(), dto.getQuantidade()),
+                                () -> assertEquals(ativoCarteira.getValorAcumulado(), dto.getValorAquisicaoAcumulado()),
+                                () -> assertEquals(ativo.getValor(), dto.getValorAtualUnitario()),
+                                () -> assertEquals(Math.round((ativo.getValor() * ativoCarteira.getQuantidade() - ativoCarteira.getValorAcumulado()) * 100.0)/100.0,
+                                        dto.getDesempenho())
+                        );
+                    })
+            );
+        }
+
+        @Test
+        @DisplayName("Deve retornar lista vazia quando carteira estiver sem ativos")
+        void quandoCarteiraEstaVazia() throws Exception {
+            Long idCliente = clientes.get(1).getId();
+
+            // Limpa a carteira
+            Carteira carteiraVazia = Carteira.builder().balanco(200.0).build();
+            clientes.get(1).setCarteira(carteiraVazia);
+            clienteRepository.save(clientes.get(1));
+
+            String responseJsonString = driver.perform(get("/clientes/" + idCliente + "/visualizar-carteira"))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<AtivoCarteiraResponseDTO> resultado = objectMapper
+                    .readValue(responseJsonString, objectMapper.getTypeFactory()
+                            .constructCollectionType(List.class, AtivoCarteiraResponseDTO.class));
+
+            assertEquals(0, resultado.size());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 400 quando cliente não existir") // Mudar para 404 depois (isNotFound())
+        void quandoClienteNaoExiste() throws Exception {
+            Long idCliente = 99999L;
+
+            driver.perform(get("/clientes/" + idCliente + "/visualizar-carteira"))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print());
+        }
+    }
+
+    @Nested
+    @DisplayName("Testes para solicitação de compra")
+    class SolicitarCompra {
+
+        @Test
+        @DisplayName("Deve solicitar a compra com sucesso para Cliente Premium")
+        void compraValidaParaPlanoPremium() throws Exception {
+            Long idCliente = clientes.get(2).getId(); // Premium
+            Long idAtivo = ativos.get(4).getId(); // Criptomoeda
+
+            String responseJsonString = driver.perform(post("/clientes/" + idCliente + "/solicitar")
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("idAtivo", idAtivo.toString())
+                            .param("quantidade", "2.0")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isCreated())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO resultado = objectMapper
+                    .readValue(responseJsonString, CompraResponseDTO.class);
+
+            assertAll(
+                    () -> assertEquals(idCliente, resultado.getIdCliente()),
+                    () -> assertEquals(idAtivo, resultado.getIdAtivo()),
+                    () -> assertEquals(2.0, resultado.getQuantidade())
+            );
+        }
+
+        @Test
+        @DisplayName("Deve solicitar a compra com sucesso para Cliente Normal")
+        void compraValidaParaPlanoNormal() throws Exception {
+            Long idCliente = clientes.get(1).getId(); // Normal
+            Long idAtivo = ativos.get(1).getId(); // TesouroDireto
+
+            String responseJsonString = driver.perform(post("/clientes/" + idCliente + "/solicitar")
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("idAtivo", idAtivo.toString())
+                            .param("quantidade", "2.0")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isCreated())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO resultado = objectMapper
+                    .readValue(responseJsonString, CompraResponseDTO.class);
+
+            assertAll(
+                    () -> assertEquals(idCliente, resultado.getIdCliente()),
+                    () -> assertEquals(idAtivo, resultado.getIdAtivo()),
+                    () -> assertEquals(2.0, resultado.getQuantidade())
+            );
+        }
+
+        @Test
+        @DisplayName("Deve retornar 400 quando cliente não existir")
+        void quandoClienteNaoExiste() throws Exception {
+            Long idClienteInexistente = 99999L;
+            Long idAtivo = ativos.get(1).getId();
+
+            driver.perform(post("/clientes/" + idClienteInexistente + "/solicitar")
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("idAtivo", idAtivo.toString())
+                            .param("quantidade", "1.0")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 400 quando código de acesso for inválido")
+        void quandoCodigoDeAcessoInvalido() throws Exception {
+            Long idCliente = clientes.get(1).getId();
+            Long idAtivo = ativos.get(1).getId();
+
+            driver.perform(post("/clientes/" + idCliente + "/solicitar")
+                            .param("codigoAcesso", CODIGO_ACESSO_INVALIDO)
+                            .param("idAtivo", idAtivo.toString())
+                            .param("quantidade", "1.0")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print());
+        }
+
+        @Test
+        @DisplayName("Deve retornar 400 quando ativo não existir")
+        void quandoAtivoNaoExiste() throws Exception {
+            Long idCliente = clientes.get(1).getId();
+            Long idAtivoInexistente = 99999L;
+
+            driver.perform(post("/clientes/" + idCliente + "/solicitar")
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("idAtivo", idAtivoInexistente.toString())
+                            .param("quantidade", "1.0")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção")
+        void quandoPlanoNaoPermitirCompra() throws Exception {
+            Long idCliente = clientes.get(1).getId(); // Normal
+            Long idAtivo = ativos.get(4).getId(); // CriptoMoeda
+
+            driver.perform(post("/clientes/" + idCliente + "/solicitar")
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("idAtivo", idAtivo.toString())
+                            .param("quantidade", "1.0")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isForbidden())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Plano do cliente nao permite marcar interesse!")));
+        }
+
+
+        @Test
+        @DisplayName("Deve lançar exceção")
+        void quandoAtivoIndisponivel() throws Exception {
+            Long idCliente = clientes.get(2).getId(); // Premium
+            Long idAtivo = ativos.get(9).getId(); // Acao Indisponivel
+
+            driver.perform(post("/clientes/" + idCliente + "/solicitar")
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("idAtivo", idAtivo.toString())
+                            .param("quantidade", "1.0")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Ativo nao disponivel!")));
+            ;
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção")
+        void quandoSaldoInsuficiente() throws Exception {
+            Long idCliente = clientes.get(2).getId();
+            Long idAtivo = ativos.get(1).getId();
+
+            Ativo ativo = ativos.get(1);
+            ativo.setValor(500.0);
+            ativoRepository.save(ativo);
+
+            driver.perform(post("/clientes/" + idCliente + "/solicitar")
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("idAtivo", idAtivo.toString())
+                            .param("quantidade", "1.0")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Balanco insuficiente!")));
+
         }
     }
 
