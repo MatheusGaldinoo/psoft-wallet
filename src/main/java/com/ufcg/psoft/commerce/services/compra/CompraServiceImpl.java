@@ -53,10 +53,10 @@ public class CompraServiceImpl implements CompraService {
     ModelMapper modelMapper;
 
     @Override
-    public CompraResponseDTO solicitarCompra(Long idCliente, CompraPostPutRequestDTO dto) {
-        clienteService.validarCodigoAcesso(idCliente, dto.getCodigoAcesso());
+    public CompraResponseDTO solicitarCompra(Long idCliente, String codigoAcesso, Long idAtivo, double quantidade) {
+        clienteService.validarCodigoAcesso(idCliente, codigoAcesso);
 
-        AtivoResponseDTO ativo = ativoService.recuperar(dto.getIdAtivo());
+        AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
 
         ativoClienteService.validarPermissaoCompra(idCliente, ativo.getId());
         // TODO - corrigir codigo de erro 403 falando de marcar-interesse.
@@ -65,15 +65,15 @@ public class CompraServiceImpl implements CompraService {
         // TODO - Corrigir o código de erro (500 agr) e a exceção de quando tento solicitar algo indisponivel.
 
         double precoUnitario = ativo.getValor();
-        double custoTotalCompra = precoUnitario * dto.getQuantidade();
+        double custoTotalCompra = precoUnitario * quantidade;
 
         carteiraService.validarBalancoSuficiente(idCliente, custoTotalCompra);
         // TODO - corrigir codigo de erro 500.
 
         Compra compra = Compra.builder()
                 .idCliente(idCliente)
-                .idAtivo(dto.getIdAtivo())
-                .quantidade(dto.getQuantidade())
+                .idAtivo(idAtivo)
+                .quantidade(quantidade)
                 .precoUnitario(precoUnitario)
                 .valorTotal(custoTotalCompra)
                 .dataSolicitacao(LocalDateTime.now())

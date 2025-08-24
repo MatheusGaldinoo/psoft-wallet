@@ -14,7 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CompraPostPutRequestDTO {
-
+// excluir
     @JsonProperty("cliente_codigo_acesso")
     @NotNull(message = "Codigo de acesso obrigatorio")
     @Pattern(regexp = "^\\d{6}$", message = "Codigo de acesso deve ter exatamente 6 digitos numericos")
