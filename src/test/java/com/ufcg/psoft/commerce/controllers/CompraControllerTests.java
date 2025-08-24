@@ -225,7 +225,7 @@ public class CompraControllerTests {
 
             Compra compra = compraRepository.save(
                     Compra.builder()
-                            .idCliente(cliente2.getId()) // compra de outro cliente
+                            .idCliente(cliente2.getId())
                             .idAtivo(ativos.get(0).getId())
                             .quantidade(1.0)
                             .precoUnitario(5.0)
@@ -253,7 +253,7 @@ public class CompraControllerTests {
                             .quantidade(1.0)
                             .precoUnitario(5.0)
                             .valorTotal(5.0)
-                            .estadoAtual(EstadoCompra.COMPRADO) // já comprada
+                            .estadoAtual(EstadoCompra.COMPRADO)
                             .build()
             );
 
@@ -262,10 +262,33 @@ public class CompraControllerTests {
         }
 
         @Test
+        @DisplayName("Deve confirmar compra se o saldo for exatamente igual ao valor da compra")
+        void confirmarCompraSaldoExato() throws Exception {
+            Cliente cliente = clientes.get(0);
+            cliente.getCarteira().setBalanco(20.0);
+            clienteRepository.save(cliente);
+
+            Compra compra = compraRepository.save(
+                    Compra.builder()
+                            .idCliente(cliente.getId())
+                            .idAtivo(ativos.get(0).getId())
+                            .quantidade(2.0)
+                            .precoUnitario(10.0)
+                            .valorTotal(20.0)
+                            .estadoAtual(EstadoCompra.DISPONIVEL)
+                            .build()
+            );
+
+            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.estadoAtual").value("EM_CARTEIRA"));
+        }
+
+        @Test
         @DisplayName("Não deve confirmar compra se o cliente não tiver saldo suficiente")
         void confirmarCompraSaldoInsuficiente() throws Exception {
             Cliente cliente = clientes.get(0);
-            cliente.getCarteira().setBalanco(1.0); // saldo baixo
+            cliente.getCarteira().setBalanco(1.0);
             clienteRepository.save(cliente);
 
             Compra compra = compraRepository.save(
@@ -284,4 +307,23 @@ public class CompraControllerTests {
         }
     }
 
+    @Test
+    @DisplayName("Não deve confirmar compra em estado SOLICITADO")
+    void confirmarCompraSolicitado() throws Exception {
+        Cliente cliente = clientes.get(0);
+
+        Compra compra = compraRepository.save(
+                Compra.builder()
+                        .idCliente(cliente.getId())
+                        .idAtivo(ativos.get(0).getId())
+                        .quantidade(1.0)
+                        .precoUnitario(5.0)
+                        .valorTotal(5.0)
+                        .estadoAtual(EstadoCompra.SOLICITADO)
+                        .build()
+        );
+
+        driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+                .andExpect(status().isBadRequest());
+    }
 }
