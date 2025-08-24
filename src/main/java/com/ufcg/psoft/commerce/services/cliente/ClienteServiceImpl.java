@@ -11,7 +11,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 public class ClienteServiceImpl implements ClienteService {
@@ -50,7 +49,7 @@ public class ClienteServiceImpl implements ClienteService {
         List<Cliente> clientes = clienteRepository.findByNomeContaining(nome);
         return clientes.stream()
                 .map(ClienteResponseDTO::new)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -68,7 +67,7 @@ public class ClienteServiceImpl implements ClienteService {
         List<Cliente> clientes = clienteRepository.findAll();
         return clientes.stream()
                 .map(ClienteResponseDTO::new)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override

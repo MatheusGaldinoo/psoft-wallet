@@ -14,7 +14,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static java.lang.Math.round;
 
@@ -94,7 +93,7 @@ public class CarteiraServiceImpl implements CarteiraService {
                             .desempenho(desempenho)
                             .build();
                 })
-                .collect(Collectors.toList());
+                .toList();
     }
 
     private static double round(double value, int places) {
