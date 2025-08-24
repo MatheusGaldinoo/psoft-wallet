@@ -156,7 +156,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
         AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
 
         if((cliente.getPlano() == TipoPlano.NORMAL) && (ativo.getTipo() != TipoAtivo.TESOURO_DIRETO)){
-            throw new ServicoNaoDisponivelParaPlanoException("Plano do cliente nao permite marcar interesse!");
+            throw new ServicoNaoDisponivelParaPlanoException("Plano do cliente nao permite visualizar ativo!");
         }
 
         return ativo;

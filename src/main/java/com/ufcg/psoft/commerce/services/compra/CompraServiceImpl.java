@@ -7,7 +7,6 @@ import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
 import com.ufcg.psoft.commerce.enums.EstadoCompra;
 import com.ufcg.psoft.commerce.exceptions.*;
 import com.ufcg.psoft.commerce.loggers.Logger;
-import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.models.transacao.Compra;
 import com.ufcg.psoft.commerce.repositories.CompraRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
@@ -26,12 +25,6 @@ import java.util.List;
 @Service
 public class CompraServiceImpl implements CompraService {
 
-    /* TODO - Compra tem muitos services.
-    *  O que pode ajudar é:
-    * (1) passar a lógica dos estados pra classe Compra; e
-    * (2) criar um package de utils contendo uma classe de validação dos dados,
-    * nem que exista uma classe de validação exclusiva de compra.
-    */
 
     @Autowired
     AdministradorService administradorService;

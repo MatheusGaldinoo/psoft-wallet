@@ -81,7 +81,6 @@ public class AtivoServiceImpl implements AtivoService {
 
     @Override
     public List<AtivoResponseDTO> listarFiltrandoPorTipo(List<TipoAtivo> tiposParaFiltrar) {
-        //List<Ativo> ativos = ativoRepository.findByStatusDisponibilidade(StatusDisponibilidade.DISPONIVEL);
         List<Ativo> ativos = ativoRepository.findAll();
         return ativos.stream()
                 .filter(ativo -> !tiposParaFiltrar.contains(ativo.getTipo().getNomeTipo()))

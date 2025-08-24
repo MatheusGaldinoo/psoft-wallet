@@ -3,7 +3,6 @@ package com.ufcg.psoft.commerce.controllers;
 import com.ufcg.psoft.commerce.dtos.carteira.AtivoCarteiraResponseDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
-import com.ufcg.psoft.commerce.exceptions.CompraNaoEncontradaException;
 import com.ufcg.psoft.commerce.services.carteira.CarteiraService;
 import com.ufcg.psoft.commerce.services.compra.CompraService;
 import jakarta.validation.Valid;

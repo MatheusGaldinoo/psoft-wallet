@@ -1055,7 +1055,7 @@ public class AtivoClienteControllerTests {
 
             // Assert
             assertAll(
-                    () -> assertEquals("Plano do cliente nao permite marcar interesse!", resultado.getMessage())
+                    () -> assertEquals("Plano do cliente nao permite visualizar ativo!", resultado.getMessage())
             );
 
         }
@@ -1085,7 +1085,7 @@ public class AtivoClienteControllerTests {
 
             // Assert
             assertAll(
-                    () -> assertEquals("Plano do cliente nao permite marcar interesse!", resultado.getMessage())
+                    () -> assertEquals("Plano do cliente nao permite visualizar ativo!", resultado.getMessage())
             );
 
         }

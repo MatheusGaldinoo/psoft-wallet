@@ -644,7 +644,7 @@ public class CompraControllerTests {
             assertEquals(2.0, compraResponseDTOAprovacao.getValorTotal());
             String output = outContent.toString();
             assertTrue(output.contains(
-                    String.format("User: %s\nAlerta: Sua compra do ativo '%s' foi aprovada",
+                    String.format("User: %s%nAlerta: Sua compra do ativo '%s' foi aprovada",
                             cliente.getNome(),
                             ativo.getNome())));
 
@@ -851,7 +851,7 @@ public class CompraControllerTests {
             assertEquals(2.0, compraResponseDTOAprovacao.getValorTotal());
             String output = outContent.toString();
             assertTrue(output.contains(
-                    String.format("User: %s\nAlerta: Sua compra do ativo '%s' foi recusada",
+                    String.format("User: %s%nAlerta: Sua compra do ativo '%s' foi recusada",
                             cliente.getNome(),
                             ativo.getNome())));
 
