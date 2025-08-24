@@ -303,7 +303,7 @@ public class CompraControllerTests {
             );
 
             driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
-                    .andExpect(status().isBadRequest());
+                    .andExpect(status().isUnprocessableEntity());
         }
     }
 
