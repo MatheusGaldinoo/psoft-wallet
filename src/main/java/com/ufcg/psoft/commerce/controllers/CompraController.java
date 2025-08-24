@@ -31,12 +31,8 @@ public class CompraController {
 
     // US09
     @PostMapping("/clientes/{idCliente}/solicitar")
-    public ResponseEntity<CompraResponseDTO> solicitarCompra(
-            @PathVariable Long idCliente,
-            @RequestParam String codigoAcesso,
-            @RequestParam Long idAtivo,
-            @RequestParam double quantidade) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(compraService.solicitarCompra(idCliente, codigoAcesso, idAtivo, quantidade));
+    public ResponseEntity<CompraResponseDTO> solicitarCompra(@PathVariable Long idCliente, @Valid @RequestBody CompraPostPutRequestDTO dto) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(compraService.solicitarCompra(idCliente, dto));
     }
 
     // US10

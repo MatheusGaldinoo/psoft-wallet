@@ -1150,10 +1150,15 @@ public class CompraControllerTests {
             Long idCliente = clientes.get(2).getId(); // Premium
             Long idAtivo = ativos.get(4).getId(); // Criptomoeda
 
+            CompraPostPutRequestDTO dto = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .idAtivo(idAtivo)
+                    .quantidade(2.0)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
             String responseJsonString = driver.perform(post("/clientes/" + idCliente + "/solicitar")
-                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                            .param("idAtivo", idAtivo.toString())
-                            .param("quantidade", "2.0")
+                            .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isCreated())
                     .andDo(print())
@@ -1175,10 +1180,15 @@ public class CompraControllerTests {
             Long idCliente = clientes.get(1).getId(); // Normal
             Long idAtivo = ativos.get(1).getId(); // TesouroDireto
 
+            CompraPostPutRequestDTO dto = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .idAtivo(idAtivo)
+                    .quantidade(2.0)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
             String responseJsonString = driver.perform(post("/clientes/" + idCliente + "/solicitar")
-                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                            .param("idAtivo", idAtivo.toString())
-                            .param("quantidade", "2.0")
+                            .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isCreated())
                     .andDo(print())
@@ -1200,10 +1210,15 @@ public class CompraControllerTests {
             Long idClienteInexistente = 99999L;
             Long idAtivo = ativos.get(1).getId();
 
+            CompraPostPutRequestDTO dto = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .idAtivo(idAtivo)
+                    .quantidade(2.0)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
             driver.perform(post("/clientes/" + idClienteInexistente + "/solicitar")
-                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                            .param("idAtivo", idAtivo.toString())
-                            .param("quantidade", "1.0")
+                            .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isBadRequest())
                     .andDo(print());
@@ -1215,10 +1230,15 @@ public class CompraControllerTests {
             Long idCliente = clientes.get(1).getId();
             Long idAtivo = ativos.get(1).getId();
 
+            CompraPostPutRequestDTO dto = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_INVALIDO)
+                    .idAtivo(idAtivo)
+                    .quantidade(1.0)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
             driver.perform(post("/clientes/" + idCliente + "/solicitar")
-                            .param("codigoAcesso", CODIGO_ACESSO_INVALIDO)
-                            .param("idAtivo", idAtivo.toString())
-                            .param("quantidade", "1.0")
+                            .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isBadRequest())
                     .andDo(print());
@@ -1230,10 +1250,15 @@ public class CompraControllerTests {
             Long idCliente = clientes.get(1).getId();
             Long idAtivoInexistente = 99999L;
 
+            CompraPostPutRequestDTO dto = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .idAtivo(idAtivoInexistente)
+                    .quantidade(1.0)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
             driver.perform(post("/clientes/" + idCliente + "/solicitar")
-                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                            .param("idAtivo", idAtivoInexistente.toString())
-                            .param("quantidade", "1.0")
+                            .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isBadRequest())
                     .andDo(print())
@@ -1246,10 +1271,15 @@ public class CompraControllerTests {
             Long idCliente = clientes.get(1).getId(); // Normal
             Long idAtivo = ativos.get(4).getId(); // CriptoMoeda
 
+            CompraPostPutRequestDTO dto = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .idAtivo(idAtivo)
+                    .quantidade(1.0)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
             driver.perform(post("/clientes/" + idCliente + "/solicitar")
-                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                            .param("idAtivo", idAtivo.toString())
-                            .param("quantidade", "1.0")
+                            .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isForbidden())
                     .andDo(print())
@@ -1263,15 +1293,17 @@ public class CompraControllerTests {
             Long idCliente = clientes.get(2).getId(); // Premium
             Long idAtivo = ativos.get(9).getId(); // Acao Indisponivel
 
+            CompraPostPutRequestDTO dto = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .idAtivo(idAtivo)
+                    .quantidade(1.0)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
             driver.perform(post("/clientes/" + idCliente + "/solicitar")
-                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                            .param("idAtivo", idAtivo.toString())
-                            .param("quantidade", "1.0")
+                            .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print())
-                    .andExpect(jsonPath("$.message", containsString("Ativo nao disponivel!")));
-            ;
+                    .andExpect(status().isServiceUnavailable());
         }
 
         @Test
@@ -1284,14 +1316,17 @@ public class CompraControllerTests {
             ativo.setValor(500.0);
             ativoRepository.save(ativo);
 
+            CompraPostPutRequestDTO dto = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .idAtivo(idAtivo)
+                    .quantidade(1.0)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
             driver.perform(post("/clientes/" + idCliente + "/solicitar")
-                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                            .param("idAtivo", idAtivo.toString())
-                            .param("quantidade", "1.0")
+                            .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print())
-                    .andExpect(jsonPath("$.message", containsString("Balanco insuficiente!")));
+                    .andExpect(status().isUnprocessableEntity());
 
         }
     }

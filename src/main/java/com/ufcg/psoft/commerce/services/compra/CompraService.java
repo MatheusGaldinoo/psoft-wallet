@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.services.compra;
 
+import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
 import org.springframework.stereotype.Service;
 
@@ -8,7 +9,7 @@ import java.util.List;
 @Service
 public interface CompraService {
 
-    CompraResponseDTO solicitarCompra(Long idCliente, String codigoAcesso, Long idAtivo, double quantidade);
+    CompraResponseDTO solicitarCompra(Long idCliente, CompraPostPutRequestDTO dto);
 
     CompraResponseDTO executarCompra(Long idCliente, Long idCompra);
 
