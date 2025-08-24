@@ -65,17 +65,4 @@ public class CompraController {
         return ResponseEntity.status(HttpStatus.OK).body(carteiraService.visualizarCarteira(idCliente));
     }
 
-    /*
-    @GetMapping("/clientes/{idCliente}/compras/{idCompra}")
-    public ResponseEntity<CompraResponseDTO> detalharCompra(@PathVariable Long idCliente, @PathVariable Long idCompra) {
-        return ResponseEntity.status(HttpStatus.OK).body(compraService.detalharCompra(idCliente, idCompra));
-    }
-
-    @GetMapping("/compras")
-    public ResponseEntity<List<CompraResponseDTO>> listarPorEstado(
-            @RequestParam(required = false) String estado
-    ) {
-        return ResponseEntity.status(HttpStatus.OK).body(compraService.listarPorEstado(estado));
-    }
-     */
 }
