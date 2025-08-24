@@ -18,6 +18,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 @Service
@@ -48,7 +49,7 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
             tiposParaFiltrar.add(TipoAtivo.CRIPTOMOEDA);
             return ativoService.listarFiltrandoPorTipo(tiposParaFiltrar);
         } else {
-            return null;
+            return Collections.emptyList();
         }
 
     }
