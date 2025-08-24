@@ -6,6 +6,8 @@ import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
 import com.ufcg.psoft.commerce.enums.EstadoCompra;
 import com.ufcg.psoft.commerce.exceptions.*;
+import com.ufcg.psoft.commerce.loggers.Logger;
+import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.models.transacao.Compra;
 import com.ufcg.psoft.commerce.repositories.CompraRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
@@ -58,17 +60,18 @@ public class CompraServiceImpl implements CompraService {
 
         AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
 
+        // 403 status code if forbidden
         ativoClienteService.validarPermissaoCompra(idCliente, ativo.getId());
-        // TODO - corrigir codigo de erro 403 falando de marcar-interesse.
 
+        // 500 status code if unavailable
         ativoService.validarDisponibilidade(ativo.getId());
-        // TODO - Corrigir o código de erro (500 agr) e a exceção de quando tento solicitar algo indisponivel.
+
 
         double precoUnitario = ativo.getValor();
         double custoTotalCompra = precoUnitario * quantidade;
 
+        // 422 status code if not enough credit
         carteiraService.validarBalancoSuficiente(idCliente, custoTotalCompra);
-        // TODO - corrigir codigo de erro 500.
 
         Compra compra = Compra.builder()
                 .idCliente(idCliente)
@@ -114,14 +117,15 @@ public class CompraServiceImpl implements CompraService {
     public CompraResponseDTO aprovarCompra(Long idCompra, String codigoAcesso) {
         administradorService.validarCodigoAcesso(codigoAcesso);
 
+        // 404 status code if Compra not found
         Compra compra = compraRepository.findById(idCompra).orElseThrow(CompraNaoEncontradaException::new);
-        // TODO - mais uma vez, corrigir o código de erro para compras inexistentes.
 
+        // 403 status code if Compra is not in SOLICITADO state
         if (compra.getEstadoAtual() != EstadoCompra.SOLICITADO) { throw new CompraNaoPendenteException(); }
-        // TODO - também corrigir para compras que já foram aprovadas, ou seja, não estão no estado 'SOLICITADO'.
 
         ClienteResponseDTO clienteDto = clienteService.recuperar(compra.getIdCliente());
 
+        // 422 status code if credit is not enough to buy asset
         carteiraService.validarBalancoSuficiente(clienteDto.getId(), compra.getValorTotal());
 
         compra.modificarEstadoCompra();
@@ -129,7 +133,9 @@ public class CompraServiceImpl implements CompraService {
 
         compraRepository.save(compra);
 
-        // TODO - O cliente deve ser notificado da disponibilidade por meio de um print no terminal.
+        AtivoResponseDTO ativoDto = ativoService.recuperar(compra.getIdAtivo());
+
+        Logger.alertUser(clienteDto.getNome(), String.format("Sua compra do ativo '%s' foi aprovada!", ativoDto.getNome()));
 
         return modelMapper.map(compra, CompraResponseDTO.class);
     }
@@ -139,6 +145,9 @@ public class CompraServiceImpl implements CompraService {
         administradorService.validarCodigoAcesso(codigoAcesso);
         Compra compra = compraRepository.findById(idCompra).orElseThrow(CompraNaoEncontradaException::new);
         compraRepository.deleteById(idCompra);
+        ClienteResponseDTO clienteDto = clienteService.recuperar(compra.getIdCliente());
+        AtivoResponseDTO ativoDto = ativoService.recuperar(compra.getIdAtivo());
+        Logger.alertUser(clienteDto.getNome(), String.format("Sua compra do ativo '%s' foi recusada!", ativoDto.getNome()));
         return modelMapper.map(compra, CompraResponseDTO.class);
     }
 
