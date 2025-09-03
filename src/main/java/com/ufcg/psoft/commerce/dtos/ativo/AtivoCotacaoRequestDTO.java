@@ -1,9 +1,6 @@
 package com.ufcg.psoft.commerce.dtos.ativo;
 
-import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ufcg.psoft.commerce.enums.TipoAtivo;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Positive;
@@ -16,28 +13,12 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AtivoPostPutRequestDTO {
-
-    @JsonProperty("nome")
-    @NotBlank(message = "Nome obrigatorio")
-    private String nome;
-
-    @JsonProperty("tipo")
-    @NotNull(message = "Tipo obrigatorio")
-    private TipoAtivo tipo;
-
-    @JsonProperty("descricao")
-    @NotBlank(message = "Descrição obrigatoria")
-    private String descricao;
-
-    @JsonProperty("statusDisponibilidade")
-    @NotNull(message = "Status de disponibilidade obrigatorio")
-    private StatusDisponibilidade statusDisponibilidade;
+public class AtivoCotacaoRequestDTO {
 
     @JsonProperty("valor")
     @NotNull(message = "Valor obrigatorio")
     @Positive(message = "Valor deve ser positivo")
-    private Double valor;
+    private double valor;
 
     @JsonProperty("codigoAcesso")
     @NotNull(message = "Codigo de acesso obrigatorio")

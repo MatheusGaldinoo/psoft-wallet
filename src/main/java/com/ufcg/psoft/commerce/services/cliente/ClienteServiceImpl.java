@@ -1,11 +1,13 @@
 package com.ufcg.psoft.commerce.services.cliente;
 
+import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.exceptions.ClienteNaoExisteException;
 import com.ufcg.psoft.commerce.exceptions.CodigoDeAcessoInvalidoException;
 import com.ufcg.psoft.commerce.repositories.ClienteRepository;
 import com.ufcg.psoft.commerce.dtos.cliente.ClientePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
+import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -19,13 +21,16 @@ public class ClienteServiceImpl implements ClienteService {
     ClienteRepository clienteRepository;
 
     @Autowired
+    AdministradorService administradorService;
+
+    @Autowired
     ModelMapper modelMapper;
 
     @Override
-    public ClienteResponseDTO alterar(Long id, String codigoAcesso, ClientePostPutRequestDTO clientePostPutRequestDTO) {
+    public ClienteResponseDTO alterar(Long id, ClientePostPutRequestDTO dto) {
         Cliente cliente = clienteRepository.findById(id).orElseThrow(ClienteNaoExisteException::new);
-        validarCodigoAcesso(id, codigoAcesso);
-        modelMapper.map(clientePostPutRequestDTO, cliente);
+        validarCodigoAcesso(id, dto.getCodigoAcesso());
+        modelMapper.map(dto, cliente);
         clienteRepository.save(cliente);
         return modelMapper.map(cliente, ClienteResponseDTO.class);
     }
@@ -38,9 +43,9 @@ public class ClienteServiceImpl implements ClienteService {
     }
 
     @Override
-    public void remover(Long id, String codigoAcesso) {
+    public void remover(Long id, CodigoAcessoDTO dto) {
         Cliente cliente = clienteRepository.findById(id).orElseThrow(ClienteNaoExisteException::new);
-        validarCodigoAcesso(id, codigoAcesso);
+        validarCodigoAcesso(id, dto.getCodigoAcesso());
         clienteRepository.delete(cliente);
     }
 

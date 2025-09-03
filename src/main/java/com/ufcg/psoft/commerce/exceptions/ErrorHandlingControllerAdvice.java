@@ -80,4 +80,10 @@ public class ErrorHandlingControllerAdvice {
         return defaultCustomErrorTypeConstruct(e.getMessage());
     }
 
+    @ExceptionHandler(CodigoDeAcessoInvalidoException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    @ResponseBody
+    public CustomErrorType onCodigoDeAcessoInvalido(CodigoDeAcessoInvalidoException e) {
+        return defaultCustomErrorTypeConstruct(e.getMessage());
+    }
 }

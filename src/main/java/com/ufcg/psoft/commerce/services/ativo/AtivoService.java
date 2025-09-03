@@ -1,8 +1,11 @@
 package com.ufcg.psoft.commerce.services.ativo;
 
+import com.ufcg.psoft.commerce.dtos.ativo.AtivoCotacaoRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 import java.util.List;
 
@@ -10,7 +13,7 @@ public interface AtivoService {
 
     AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO);
 
-    AtivoResponseDTO ativarOuDesativar(Long id);
+    AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso);
 
     List<AtivoResponseDTO> listarTodos();
 
@@ -20,7 +23,7 @@ public interface AtivoService {
 
     AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO);
 
-    void remover(Long id);
+    void remover(Long id, String codigoAcesso);
 
     List<Long> recuperarInteressadosCotacao(Long id);
 
@@ -33,4 +36,6 @@ public interface AtivoService {
     void adicionarInteressadoDisponibilidade(Long idAtivo, Long idCliente);
 
     void validarDisponibilidade(Long idAtivo);
+
+    AtivoResponseDTO atualizarCotacao(Long id, AtivoCotacaoRequestDTO dto);
 }

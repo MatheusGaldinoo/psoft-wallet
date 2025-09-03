@@ -57,94 +57,17 @@ public class AtivoClienteServiceImpl implements AtivoClienteService {
     @Override
     public void adicionarInteressado(Long idCliente, Long idAtivo) throws ServicoNaoDisponivelParaPlanoException {
 
-       ClienteResponseDTO cliente = clienteService.recuperar(idCliente);
-       AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
+        ClienteResponseDTO cliente = clienteService.recuperar(idCliente);
+        AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
 
-       if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL) {
-           if (cliente.getPlano() == TipoPlano.NORMAL) {
-               throw new ServicoNaoDisponivelParaPlanoException("Plano do cliente nao permite marcar interesse!");
-           }
-           ativoService.adicionarInteressadoCotacao(idAtivo, idCliente);
-       } else {
-           ativoService.adicionarInteressadoDisponibilidade(idAtivo, idCliente);
-       }
-    }
-
-    @Override
-    public AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
-        return ativoService.alterar(id, ativoPostPutRequestDTO);
-    }
-
-    @Override
-    public AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
-        return ativoService.criar(ativoPostPutRequestDTO);
-    }
-
-    @Override
-    public AtivoResponseDTO atualizarCotacao(Long idAtivo, AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso) {
-
-        administradorService.validarCodigoAcesso(codigoAcesso);
-
-        AtivoResponseDTO ativoAtual = ativoService.recuperar(idAtivo);
-        if (ativoAtual.getTipo() != TipoAtivo.ACAO && ativoAtual.getTipo() != TipoAtivo.CRIPTOMOEDA) {
-            throw new CotacaoNaoPodeSerAtualizadaException();
+        if (ativo.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL) {
+            if (cliente.getPlano() == TipoPlano.NORMAL) {
+                throw new ServicoNaoDisponivelParaPlanoException("Plano do cliente nao permite marcar interesse!");
+            }
+            ativoService.adicionarInteressadoCotacao(idAtivo, idCliente);
+        } else {
+            ativoService.adicionarInteressadoDisponibilidade(idAtivo, idCliente);
         }
-
-        Double cotacaoAtual = ativoAtual.getValor();
-        Double novaCotacao = ativoPostPutRequestDTO.getValor();
-        Double variacaoPercentual = Math.abs((cotacaoAtual - novaCotacao) / cotacaoAtual);
-
-        if (variacaoPercentual < 0.01) {
-            throw new VariacaoMinimaDeCotacaoNaoAtingidaException();
-        }
-
-        if (variacaoPercentual >= 0.10) {
-            List<Long> interessados = ativoService.recuperarInteressadosCotacao(idAtivo);
-            String mensagem = String.format("Ativo %s variou de cotação em %.2f%%",
-                    ativoPostPutRequestDTO.getNome(),
-                    variacaoPercentual * 100);
-            notificarInteressados(mensagem, interessados);
-        }
-
-        return ativoService.alterar(idAtivo, ativoPostPutRequestDTO);
-    }
-
-    @Override
-    public AtivoResponseDTO ativarOuDesativar(Long idAtivo, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
-
-        AtivoResponseDTO ativoAtualizado = ativoService.ativarOuDesativar(idAtivo);
-
-        if (ativoAtualizado.getStatusDisponibilidade() == StatusDisponibilidade.DISPONIVEL) {
-
-            List<Long> interessados = ativoService.recuperarInteressadosDisponibilidade(idAtivo);
-
-            String mensagem = String.format("O ativo '%s' agora está disponível para compra!", ativoAtualizado.getNome());
-            notificarInteressados(mensagem, interessados);
-            ativoService.limparInteressadosDisponibilidade(idAtivo);
-        }
-
-        return ativoAtualizado;
-    }
-
-    private void notificarInteressados(String mensagem, List<Long> interessados) {
-
-        if (interessados == null || interessados.isEmpty()) {
-            return;
-        }
-
-        for (Long idInteressado : interessados) {
-            ClienteResponseDTO cliente = clienteService.recuperar(idInteressado);
-            Logger.alertUser(cliente.getNome(), mensagem);
-        }
-    }
-
-    @Override
-    public void remover(Long id, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
-        ativoService.remover(id);
     }
 
     @Override

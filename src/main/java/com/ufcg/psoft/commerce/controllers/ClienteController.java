@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.controllers;
 
+import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClientePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
 import com.ufcg.psoft.commerce.services.cliente.ClienteService;
@@ -55,18 +56,17 @@ public class ClienteController {
     @PutMapping("/{id}")
     public ResponseEntity<ClienteResponseDTO> atualizarCliente(
             @PathVariable Long id,
-            @RequestParam String codigoAcesso,
             @RequestBody @Valid ClientePostPutRequestDTO clientePostPutRequestDto) {
         return ResponseEntity
                 .status(HttpStatus.OK)
-                .body(clienteService.alterar(id, codigoAcesso, clientePostPutRequestDto));
+                .body(clienteService.alterar(id, clientePostPutRequestDto));
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluirCliente(
             @PathVariable Long id,
-            @RequestParam String codigoAcesso) {
-        clienteService.remover(id, codigoAcesso);
+            @RequestBody @Valid CodigoAcessoDTO dto) {
+        clienteService.remover(id, dto);
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();

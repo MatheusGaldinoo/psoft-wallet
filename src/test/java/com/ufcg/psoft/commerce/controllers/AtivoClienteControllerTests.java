@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
+import com.ufcg.psoft.commerce.dtos.ativo.AtivoCotacaoRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
@@ -49,7 +50,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @DisplayName("Testes do controlador de Ativos")
 public class AtivoClienteControllerTests {
 
-    final String URI_CLIENTES = "/usuario";
+    final String URI_CLIENTES = "/usuarios";
     final String CODIGO_ACESSO_VALIDO = "123456";
     final String CODIGO_ACESSO_INVALIDO = "000000";
 
@@ -159,201 +160,6 @@ public class AtivoClienteControllerTests {
     }
 
     @Nested
-    @DisplayName("POST /ativos - Criar ativo")
-    class CriarAtivo {
-
-        @Test
-        @DisplayName("Deve criar ativo com dados válidos")
-        void deveCriarAtivoComDadosValidos() throws Exception {
-
-            AtivoPostPutRequestDTO ativo = AtivoPostPutRequestDTO.builder()
-                    .nome("Novo Ativo")
-                    .descricao("Descrição do novo ativo")
-                    .valor(150.0)
-                    .tipo(tesouro.getNomeTipo())
-                    .statusDisponibilidade(StatusDisponibilidade.DISPONIVEL)
-                    .build();
-
-            String ativoJson = objectMapper.writeValueAsString(ativo);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-
-            String responseJsonString = driver.perform(
-                            post(String.format("/usuario/%d/criar-ativo", admin.getId()))
-                                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(ativoJson))
-                    .andExpect(status().isCreated())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            AtivoResponseDTO ativoCriado = objectMapper.readValue(
-                    responseJsonString, AtivoResponseDTO.class);
-
-            assertEquals(ativo.getNome(), ativoCriado.getNome());
-            assertEquals(ativo.getValor(), ativoCriado.getValor());
-        }
-
-        @Test
-        @DisplayName("Deve retornar erro 400 com dados inválidos")
-        void deveRetornarErro400ComDadosInvalidos() throws Exception {
-            AtivoPostPutRequestDTO ativoInvalido = AtivoPostPutRequestDTO.builder()
-                    .nome("") // Nome vazio
-                    .descricao("Descrição")
-                    .valor(-10.0) // Valor negativo
-                    .tipo(tesouro.getNomeTipo())
-                    .statusDisponibilidade(StatusDisponibilidade.DISPONIVEL)
-                    .build();
-
-            String ativoJson = objectMapper.writeValueAsString(ativoInvalido);
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-
-            driver.perform(
-                            post(String.format("/usuario/%d/criar-ativo", admin.getId()))
-                                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(ativoJson))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print());
-        }
-
-        @Test
-        @DisplayName("Deve retornar erro 400 com código de acesso inválido")
-        void deveRetornarErro400ComCodigoAcessoInvalido() throws Exception {
-            AtivoPostPutRequestDTO novoAtivo = AtivoPostPutRequestDTO.builder()
-                    .nome("Novo Ativo")
-                    .descricao("Descrição")
-                    .valor(150.0)
-                    .tipo(tesouro.getNomeTipo())
-                    .statusDisponibilidade(StatusDisponibilidade.DISPONIVEL)
-                    .build();
-
-            String ativoJson = objectMapper.writeValueAsString(novoAtivo);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-
-            driver.perform(
-                            post(String.format("/usuario/%d/criar-ativo", admin.getId()))
-                                    .param("codigoAcesso", CODIGO_ACESSO_INVALIDO)
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(ativoJson))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print());
-        }
-
-    }
-
-    @Nested
-    @DisplayName("PUT /ativos/{id} - Atualizar ativo")
-    class AtualizarAtivo {
-
-        @Test
-        @DisplayName("Deve atualizar ativo existente com dados válidos")
-        void deveAtualizarAtivoExistente() throws Exception {
-            Ativo ativo = ativos.get(0);
-
-            AtivoPostPutRequestDTO ativoAtualizado = AtivoPostPutRequestDTO.builder()
-                    .nome("Nome Atualizado")
-                    .descricao("Descrição Atualizada")
-                    .valor(200.0)
-                    .tipo(ativo.getTipo().getNomeTipo())
-                    .statusDisponibilidade(StatusDisponibilidade.DISPONIVEL)
-                    .build();
-
-            String ativoJson = objectMapper.writeValueAsString(ativoAtualizado);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-
-            String responseJsonString = driver.perform(
-                            put(String.format("/usuario/%d/atualizar-ativo/%s", admin.getId(), ativo.getId()))
-                                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(ativoJson))
-                    .andExpect(status().isOk())
-                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            AtivoResponseDTO ativoRetornado = objectMapper.readValue(
-                    responseJsonString, AtivoResponseDTO.class);
-
-            assertEquals(ativoAtualizado.getNome(), ativoRetornado.getNome());
-            assertEquals(ativoAtualizado.getValor(), ativoRetornado.getValor());
-        }
-
-        @Test
-        @DisplayName("Deve retornar 400 ao tentar atualizar ativo inexistente")
-        void deveRetornar400AoTentarAtualizarAtivoInexistente() throws Exception {
-            AtivoPostPutRequestDTO ativoAtualizado = AtivoPostPutRequestDTO.builder()
-                    .nome("Nome Atualizado")
-                    .descricao("Descrição Atualizada")
-                    .valor(200.0)
-                    .tipo(tesouro.getNomeTipo())
-                    .statusDisponibilidade(StatusDisponibilidade.DISPONIVEL)
-                    .build();
-
-            String ativoJson = objectMapper.writeValueAsString(ativoAtualizado);
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-
-            driver.perform(
-                            put(String.format("/usuario/%d/atualizar-ativo/%s", admin.getId(), "999999"))
-                                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(ativoJson))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print());
-        }
-    }
-
-    @Nested
-    @DisplayName("DELETE /ativos/{id} - Excluir ativo")
-    class ExcluirAtivo {
-
-        @Test
-        @DisplayName("Deve excluir ativo existente")
-        void deveExcluirAtivoExistente() throws Exception {
-            Ativo ativo = ativos.get(0);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-
-            driver.perform(
-                            delete(String.format("/usuario/%d/excluir-ativo/%d", admin.getId(), ativo.getId()))
-                                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO))
-                    .andExpect(status().isNoContent())
-                    .andDo(print());
-
-            assertFalse(ativoRepository.existsById(ativo.getId()));
-        }
-
-        @Test
-        @DisplayName("Deve retornar 400 ao tentar excluir ativo inexistente")
-        void deveRetornar400AoTentarExcluirAtivoInexistente() throws Exception {
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            driver.perform(
-                            delete(String.format("/usuario/%d/excluir-ativo/%d", admin.getId(), 999999))
-                                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print());
-        }
-
-        @Test
-        @DisplayName("Deve retornar erro 400 com código de acesso inválido")
-        void deveRetornarErro400ComCodigoAcessoInvalido() throws Exception {
-            Ativo ativo = ativos.get(0);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            driver.perform(
-                            delete(String.format("/usuario/%d/excluir-ativo/%d", admin.getId(), ativo.getId()))
-                                    .param("codigoAcesso", CODIGO_ACESSO_INVALIDO))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print());
-        }
-    }
-
-
-    @Nested
     @DisplayName("Conjunto de casos de verificação de nome")
     class AtivoListagem {
 
@@ -363,7 +169,7 @@ public class AtivoClienteControllerTests {
 
             Cliente cliente = clienteRepository.findByNomeContaining("Cliente1").get(0);
             String responseJsonString = driver.perform(
-                            get(URI_CLIENTES + "/" + cliente.getId() + "/ativos-disponiveis"))
+                            get(URI_CLIENTES + "/" + cliente.getId() + "/ativos"))
                     .andExpect(status().isOk())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -388,7 +194,7 @@ public class AtivoClienteControllerTests {
 
             Cliente cliente = clienteRepository.findByNomeContaining("Cliente2").get(0);
             String responseJsonString = driver.perform(
-                            get(URI_CLIENTES + "/" + cliente.getId() + "/ativos-disponiveis"))
+                            get(URI_CLIENTES + "/" + cliente.getId() + "/ativos"))
                     .andExpect(status().isOk())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -412,244 +218,6 @@ public class AtivoClienteControllerTests {
     }
 
     @Nested
-    @DisplayName("Testes para atualização da cotação do ativo")
-    class AtualizacaoCotacao {
-
-        @Test
-        @DisplayName("Quando a cotação for atualizada com sucesso")
-        void atualizacaoCotacaoSucesso() throws Exception {
-
-            Ativo ativo = ativos.get(3);
-
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-            ativoPostPutRequestDTO.setValor(110.0);
-
-            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            String responseJsonString = driver.perform(patch("/usuario/" + admin.getId() + "/atualizar-cotacao/" + ativo.getId())
-                            .param("codigoAcesso", "123456")
-                            .content(json)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, AtivoResponseDTO.class);
-
-            assertAll(
-                    () -> assertEquals(ativo.getId(), resultado.getId()),
-                    () -> assertEquals(110.0, resultado.getValor()),
-                    () -> assertEquals(ativo.getNome(), resultado.getNome()),
-                    () -> assertEquals(ativo.getDescricao(), resultado.getDescricao()),
-                    () -> assertEquals(ativo.getTipo().getNomeTipo(), resultado.getTipo()),
-                    () -> assertEquals(ativo.getStatusDisponibilidade(), resultado.getStatusDisponibilidade())
-            );
-
-        }
-
-        @Test
-        @DisplayName("Quando o código de acesso do administrador for inválido")
-        void codigoAcessoInvalido() throws Exception {
-
-            Ativo ativo = ativos.get(0);
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-
-            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            driver.perform(patch("/usuario/" + admin.getId() + "/atualizar-cotacao/" + ativo.getId())
-                            .param("codigoAcesso", "codigoErrado")
-                            .content(json)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print())
-                    .andExpect(jsonPath("$.message", containsString("Codigo de acesso invalido!")));
-        }
-
-        @Test
-        @DisplayName("Quando o ativo não for encontrado")
-        void ativoNaoEncontrado() throws Exception {
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-
-            Ativo ativo = ativos.get(0);
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-
-            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
-
-            driver.perform(patch("/usuario/" + admin.getId() + "/atualizar-cotacao/" + 999999)
-                            .param("codigoAcesso", "123456")
-                            .content(json)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print())
-                    .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
-        }
-
-        @Test
-        @DisplayName("Quando o tipo do ativo não permitir atualização de cotação")
-        void tipoAtivoNaoPermiteAtualizacao() throws Exception {
-
-            Ativo ativo = ativos.get(0);
-
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            driver.perform(patch("/usuario/" + admin.getId() + "/atualizar-cotacao/" + ativo.getId())
-                            .param("codigoAcesso", "123456")
-                            .content(json)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print())
-                    .andExpect(jsonPath("$.message", containsString("Somente ativos do tipo Ação ou Criptomoeda podem ter a cotação atualizada!")));
-        }
-
-        @Test
-        @DisplayName("Quando a nova cotação variar menos que 1% em relação à atual")
-        void cotacaoAbaixoDoMinimoPermitido() throws Exception {
-
-            Ativo ativo = ativos.get(3);
-
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-            ativoPostPutRequestDTO.setValor(ativo.getValor() * 1.009);
-            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            driver.perform(patch("/usuario/" + admin.getId() + "/atualizar-cotacao/" + ativo.getId())
-                            .param("codigoAcesso", "123456")
-                            .content(json)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print())
-                    .andExpect(jsonPath("$.message", containsString("A variação da cotação deve ser de no mínimo 1%.")));
-        }
-
-    }
-
-    @Nested
-    @DisplayName("Testes para atualização do Status de Disponibilidade")
-    class AtualizarStatusDisponibilidade {
-
-        @Test
-        @DisplayName("Quando o código de acesso do administrador for inválido")
-        void codigoAcessoInvalido() throws Exception {
-
-            Ativo ativo = ativos.get(0);
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            driver.perform(patch("/usuario/" + admin.getId() + "/ativar-desativar/" + ativo.getId())
-                            .param("codigoAcesso", "codigoErrado")
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print())
-                    .andExpect(jsonPath("$.message", containsString("Codigo de acesso invalido!")));
-        }
-
-        @Test
-        @DisplayName("Quando o ativo não for encontrado")
-        void ativoNaoEncontrado() throws Exception {
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            driver.perform(patch("/usuario/" + admin.getId() + "/ativar-desativar/" + 999999)
-                            .param("codigoAcesso", "123456")
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print())
-                    .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
-        }
-
-        @Test
-        @DisplayName("Quando indisponibilizamos o ativo")
-        void quandoIndisponibilizamosOAtivo() throws Exception {
-
-            criarAtivo("AtivoAtivo", tesouro, 100, StatusDisponibilidade.DISPONIVEL);
-            Ativo ativo = ativos.get(ativos.size() - 1);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            String responseJsonString = driver.perform(patch("/usuario/" + admin.getId() + "/ativar-desativar/" + ativo.getId())
-                            .param("codigoAcesso", "123456")
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            AtivoResponseDTO ativoRetornado = objectMapper.readValue(
-                    responseJsonString,
-                    new TypeReference<AtivoResponseDTO>() {
-                    }
-            );
-
-            assertEquals(StatusDisponibilidade.INDISPONIVEL, ativoRetornado.getStatusDisponibilidade());
-        }
-
-        @Test
-        @DisplayName("Quando disponibilizamos o ativo")
-        void quandoDisponibilizamosOAtivo() throws Exception {
-
-            criarAtivo("AtivoInativo", tesouro, 100, StatusDisponibilidade.INDISPONIVEL);
-            Ativo ativo = ativos.get(ativos.size() - 1);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            String responseJsonString = driver.perform(patch("/usuario/" + admin.getId() + "/ativar-desativar/" + ativo.getId())
-                            .param("codigoAcesso", "123456")
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            AtivoResponseDTO ativoRetornado = objectMapper.readValue(
-                    responseJsonString,
-                    new TypeReference<AtivoResponseDTO>() {
-                    }
-            );
-
-            assertEquals(StatusDisponibilidade.DISPONIVEL, ativoRetornado.getStatusDisponibilidade());
-        }
-    }
-
-    @Nested
-    @DisplayName("Testes de validação de entrada")
-    class ValidacaoEntrada {
-
-        @Test
-        @DisplayName("Deve retornar erro 400 quando parâmetro obrigatório está ausente")
-        void deveRetornarErro400QuandoParametroObrigatorioAusente() throws Exception {
-            AtivoPostPutRequestDTO novoAtivo = AtivoPostPutRequestDTO.builder()
-                    .nome("Novo Ativo")
-                    .descricao("Descrição")
-                    .valor(150.0)
-                    .tipo(tesouro.getNomeTipo())
-                    .statusDisponibilidade(StatusDisponibilidade.DISPONIVEL)
-                    .build();
-
-            String ativoJson = objectMapper.writeValueAsString(novoAtivo);
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            driver.perform(
-                            post(String.format("/usuario/%d/criar-ativo", admin.getId()))
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(ativoJson))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print());
-        }
-
-        @Test
-        @DisplayName("Deve retornar erro 400 com JSON malformado")
-        void deveRetornarErro400ComJsonMalformado() throws Exception {
-            String jsonMalformado = "{ nome: 'teste', valor: }";
-
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
-            driver.perform(
-                            post(String.format("/usuario/%d/criar-ativo", admin.getId()))
-                                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(jsonMalformado))
-                    .andExpect(status().isBadRequest())
-                    .andDo(print());
-        }
-    }
-
-    @Nested
     @DisplayName("Testes para adição de cliente interessado em ativo")
     class AdicionarInteressado {
 
@@ -664,7 +232,7 @@ public class AtivoClienteControllerTests {
             String json = objectMapper.writeValueAsString(ativo);
 
             driver.perform(
-                    patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), ativo.getId()))
+                    patch(String.format("/usuarios/%d/ativos/%d/interesse", cliente.getId(), ativo.getId()))
                             .param("codigoAcesso", "123456")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(json)).andExpect(status().isOk());
@@ -689,7 +257,7 @@ public class AtivoClienteControllerTests {
             String json = objectMapper.writeValueAsString(ativo);
 
             driver.perform(
-                    patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), ativo.getId()))
+                    patch(String.format("/usuarios/%d/ativos/%d/interesse", cliente.getId(), ativo.getId()))
                             .param("codigoAcesso", "123456")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(json)).andExpect(status().isOk());
@@ -714,7 +282,7 @@ public class AtivoClienteControllerTests {
             String json = objectMapper.writeValueAsString(ativo);
 
             driver.perform(
-                    patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), ativo.getId()))
+                    patch(String.format("/usuarios/%d/ativos/%d/interesse", cliente.getId(), ativo.getId()))
                             .param("codigoAcesso", "123456")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(json)).andExpect(status().isOk());
@@ -739,7 +307,7 @@ public class AtivoClienteControllerTests {
             String json = objectMapper.writeValueAsString(ativo);
 
             String responseJsonString = driver.perform(
-                            patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), ativo.getId()))
+                            patch(String.format("/usuarios/%d/ativos/%d/interesse", cliente.getId(), ativo.getId()))
                                     .param("codigoAcesso", "123456")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(json))
@@ -767,7 +335,7 @@ public class AtivoClienteControllerTests {
             String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
 
             String responseJsonString = driver.perform(
-                            patch(String.format("/usuario/%d/marcar-interesse/%d", cliente.getId(), 999999))
+                            patch(String.format("/usuarios/%d/ativos/%d/interesse", cliente.getId(), 999999))
                                     .param("codigoAcesso", "123456")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(json))
@@ -791,7 +359,7 @@ public class AtivoClienteControllerTests {
             String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
 
             String responseJsonString = driver.perform(
-                            patch(String.format("/usuario/%d/marcar-interesse/%d", 999999, ativo.getId()))
+                            patch(String.format("/usuarios/%d/ativos/%d/interesse", 999999, ativo.getId()))
                                     .param("codigoAcesso", "123456")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(json))
@@ -838,10 +406,16 @@ public class AtivoClienteControllerTests {
             System.setOut(originalOut);
         }
 
-        private String ativarAtivo(Long idUser, Long idAtivo, boolean imprimir) throws Exception {
-            var perform = driver.perform(patch("/usuario/" + idUser + "/ativar-desativar/" + idAtivo)
-                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                    .contentType(MediaType.APPLICATION_JSON));
+        private String ativarAtivo(Long idAtivo, boolean imprimir) throws Exception {
+            String requestJson = """
+                {
+                    "codigoAcesso": "%s"
+                }
+                """.formatted(CODIGO_ACESSO_VALIDO);
+
+            var perform = driver.perform(patch("/ativos/" + idAtivo + "/status")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestJson));
 
             if (imprimir) {
                 perform.andDo(print());
@@ -856,7 +430,7 @@ public class AtivoClienteControllerTests {
         @Transactional
         @DisplayName("Deve imprimir notificação para interessados quando ativo fica disponível e limpar a lista")
         void deveImprimirNotificacaoParaInteressadosELimparAListaParaNotificarUnicaVez() throws Exception {
-            String output = ativarAtivo(ativoComInteressados.getId(), ativoComInteressados.getId(), true);
+            String output = ativarAtivo(ativoComInteressados.getId(), true);
 
             assertTrue(output.contains(cliente.getNome()), "Deve conter o nome do cliente na notificação");
             assertTrue(output.contains(ativoComInteressados.getNome()), "Deve conter o nome do ativo na notificação");
@@ -868,7 +442,7 @@ public class AtivoClienteControllerTests {
         @Transactional
         @DisplayName("Não deve imprimir nada se não houver interessados")
         void naoDeveImprimirNotificacaoSemInteressados() throws Exception {
-            String output = ativarAtivo(cliente.getId(), ativoSemInteressados.getId(), false);
+            String output = ativarAtivo(ativoSemInteressados.getId(), false);
 
             assertFalse(output.contains("Notificação para:"), "Não deve imprimir notificação quando não há interessados");
             assertEquals(0, ativoSemInteressados.getInteressadosDisponibilidade().size());
@@ -883,9 +457,15 @@ public class AtivoClienteControllerTests {
 
             assertEquals(1, ativoComInteressados.getInteressadosDisponibilidade().size(), "Lista de interessados deve continuar intacta ao desativar");
 
-            var perform = driver.perform(patch("/usuario/" + ativoComInteressados.getId() + "/ativar-desativar/" + ativoComInteressados.getId())
-                    .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-                    .contentType(MediaType.APPLICATION_JSON));
+            String requestJson = """
+                {
+                    "codigoAcesso": "%s"
+                }
+                """.formatted(CODIGO_ACESSO_VALIDO);
+
+            var perform = driver.perform(patch("/ativos/" + ativoComInteressados.getId() + "/status")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .content(requestJson));
 
             perform.andExpect(status().isOk());
 
@@ -912,11 +492,10 @@ public class AtivoClienteControllerTests {
             System.setOut(originalOut);
         }
 
-        private String atualizarCotacao(Long idAdmin, Long idAtivo, AtivoPostPutRequestDTO ativoDTO, boolean imprimir) throws Exception {
+        private String atualizarCotacao(Long idAtivo, AtivoCotacaoRequestDTO ativoDTO, boolean imprimir) throws Exception {
             String json = objectMapper.writeValueAsString(ativoDTO);
 
-            var perform = driver.perform(patch("/usuario/" + idAdmin + "/atualizar-cotacao/" + idAtivo)
-                    .param("codigoAcesso", "123456")
+            var perform = driver.perform(patch("/ativos/" + idAtivo + "/cotacao")
                     .content(json)
                     .contentType(MediaType.APPLICATION_JSON));
 
@@ -933,26 +512,19 @@ public class AtivoClienteControllerTests {
         @DisplayName("Quando a cotação for atualizada com sucesso em 10% ou mais")
         void interessadosDevemSerNotificados() throws Exception {
 
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
             Ativo ativo = ativos.get(3);
             Cliente cliente = clientes.get(0);
 
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
-            String json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
+            driver.perform(patch("/usuarios/" + cliente.getId() + "/ativos/" + ativo.getId() + "/interesse"))
+                    .andExpect(status().isOk());
 
-            driver.perform(patch("/usuario/" + cliente.getId() + "/marcar-interesse/" + ativo.getId())
-                            .param("codigoAcesso", "123456")
-                            .content(json)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
+            AtivoCotacaoRequestDTO dto = new AtivoCotacaoRequestDTO();
+            dto.setCodigoAcesso("123456");
+            dto.setValor(120.0);
 
-            ativoPostPutRequestDTO.setValor(120.0);
-            json = objectMapper.writeValueAsString(ativoPostPutRequestDTO);
+            String json = objectMapper.writeValueAsString(dto);
 
-            String responseJsonString = driver.perform(patch("/usuario/" + admin.getId() + "/atualizar-cotacao/" + ativo.getId())
-                            .param("codigoAcesso", "123456")
+            String responseJsonString = driver.perform(patch("/ativos/" + ativo.getId() + "/cotacao")
                             .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isOk())
@@ -962,24 +534,24 @@ public class AtivoClienteControllerTests {
             AtivoResponseDTO resultado = objectMapper.readValue(responseJsonString, AtivoResponseDTO.class);
             System.out.flush();
             String output = outContent.toString();
+
             assertEquals( 120, resultado.getValor());
             assertTrue(output.contains("Alerta"), "Deve conter 'Alerta' na notificação");
             assertTrue(output.contains("variou de cotação"), "Deve conter 'variou de cotação' na notificação");
             assertTrue(output.contains(ativo.getNome()), "Deve conter o nome do ativo na notificação");
-
         }
 
         @Test
         @DisplayName("Não deve notificar quando variação for menor que 10%")
         void naoDeveNotificarVariacaoMenor() throws Exception {
             Ativo ativo = ativos.get(3);
-            Administrador admin = administradorRepository.findByNome("Admin").orElseThrow(Exception::new);
 
-            AtivoPostPutRequestDTO ativoPostPutRequestDTO = modelMapper.map(ativo, AtivoPostPutRequestDTO.class);
+            AtivoCotacaoRequestDTO dto = modelMapper.map(ativo, AtivoCotacaoRequestDTO.class);
             Double valorOriginal = ativo.getValor();
-            ativoPostPutRequestDTO.setValor(valorOriginal * 1.05);
+            dto.setValor(valorOriginal * 1.05);
+            dto.setCodigoAcesso("123456");
 
-            String output = atualizarCotacao(admin.getId(), ativo.getId(), ativoPostPutRequestDTO, false);
+            String output = atualizarCotacao(ativo.getId(), dto, false);
 
             assertFalse(output.contains("variou de cotação"), "Não deve notificar com variação < 10%");
         }
@@ -1006,7 +578,7 @@ public class AtivoClienteControllerTests {
 
             // Act
             String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
-                            "/visualizar-ativo/" + ativo.getId())
+                            "/ativos/" + ativo.getId())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
                     .andExpect(status().isOk()) // Codigo 200
@@ -1040,7 +612,7 @@ public class AtivoClienteControllerTests {
 
             // Act
             String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
-                            "/visualizar-ativo/" + ativo.getId())
+                            "/ativos/" + ativo.getId())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
                     .andExpect(status().isForbidden()) // Codigo 403
@@ -1070,7 +642,7 @@ public class AtivoClienteControllerTests {
 
             // Act
             String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
-                            "/visualizar-ativo/" + ativo.getId())
+                            "/ativos/" + ativo.getId())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
                     .andExpect(status().isForbidden()) // Codigo 403
@@ -1100,7 +672,7 @@ public class AtivoClienteControllerTests {
 
             // Act
             String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
-                            "/visualizar-ativo/" + ativo.getId())
+                            "/ativos/" + ativo.getId())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
                     .andExpect(status().isOk()) // Codigo 200
@@ -1134,7 +706,7 @@ public class AtivoClienteControllerTests {
 
             // Act
             String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
-                            "/visualizar-ativo/" + ativo.getId())
+                            "/ativos/" + ativo.getId())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
                     .andExpect(status().isOk()) // Codigo 200
@@ -1168,7 +740,7 @@ public class AtivoClienteControllerTests {
 
             // Act
             String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
-                            "/visualizar-ativo/" + ativo.getId())
+                            "/ativos/" + ativo.getId())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
                     .andExpect(status().isOk()) // Codigo 200
@@ -1199,7 +771,7 @@ public class AtivoClienteControllerTests {
 
             // Act
             String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + 5 +
-                            "/visualizar-ativo/" + ativo.getId())
+                            "/ativos/" + ativo.getId())
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
                     .andExpect(status().isBadRequest()) // Codigo 400
@@ -1224,7 +796,7 @@ public class AtivoClienteControllerTests {
 
             // Act
             String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() +
-                            "/visualizar-ativo/" + 11)
+                            "/ativos/" + 11)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
                     .andExpect(status().isBadRequest()) // Codigo 400

@@ -12,17 +12,7 @@ public interface AtivoClienteService {
 
     List<AtivoResponseDTO> listarAtivosDisponiveis(Long idCliente);
 
-    AtivoResponseDTO alterar(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso);
-
-    AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso);
-
-    void remover(Long id, String codigoAcesso);
-
-    AtivoResponseDTO atualizarCotacao(Long id, AtivoPostPutRequestDTO ativoPostPutRequestDTO, String codigoAcesso);
-
     void adicionarInteressado(Long idAtivo, Long idCliente) throws ServicoNaoDisponivelParaPlanoException;
-
-    AtivoResponseDTO ativarOuDesativar(Long id, String codigoAcesso);
 
     AtivoResponseDTO visualizarAtivo(Long idCliente, Long idAtivo);
 

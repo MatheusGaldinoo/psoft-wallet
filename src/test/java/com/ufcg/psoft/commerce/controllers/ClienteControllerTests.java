@@ -3,6 +3,7 @@ package com.ufcg.psoft.commerce.controllers;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.carteira.CarteiraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClientePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
@@ -481,10 +482,14 @@ public class ClienteControllerTests {
         void quandoBuscamosPorTodosClienteSalvosSemClientes() throws Exception {
             // Arrange
             // Vamos ter o clientes no banco
+            CodigoAcessoDTO dto = new CodigoAcessoDTO();
+            dto.setCodigoAcesso(cliente.getCodigoAcesso());
+            String json = objectMapper.writeValueAsString(dto);
+
             //Act
             driver.perform(delete(URI_CLIENTES + "/" + cliente.getId())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                            .content(json)
+                            .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isNoContent()) // Codigo 204
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -1120,13 +1125,18 @@ public class ClienteControllerTests {
         @DisplayName("Quando alteramos o cliente passando código de acesso inválido")
         void quandoAlteramosClienteCodigoAcessoInvalido() throws Exception {
             // Arrange
-            Long clienteId = cliente.getId();
+            ClientePostPutRequestDTO dto = new ClientePostPutRequestDTO();
+            dto.setNome("Cliente Um da Silva");
+            dto.setEndereco("Rua dos Testes, 123");
+            dto.setCodigoAcesso("654321");
+            dto.setPlano(NORMAL);
+            dto.setCarteira(carteiraPostPutRequestDTO);
+            String json = objectMapper.writeValueAsString(dto);
 
             // Act
-            String responseJsonString = driver.perform(put(URI_CLIENTES + "/" + clienteId)
+            String responseJsonString = driver.perform(put(URI_CLIENTES + "/" + cliente.getId())
                             .contentType(MediaType.APPLICATION_JSON)
-                            .param("codigoAcesso", "invalido")
-                            .content(objectMapper.writeValueAsString(clientePostPutRequestDTO)))
+                            .content(json))
                     .andExpect(status().isBadRequest()) // Codigo 400
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -1143,12 +1153,14 @@ public class ClienteControllerTests {
         @DisplayName("Quando excluímos um cliente salvo")
         void quandoExcluimosClienteValido() throws Exception {
             // Arrange
-            // nenhuma necessidade além do setup()
+            CodigoAcessoDTO dto = new CodigoAcessoDTO();
+            dto.setCodigoAcesso(cliente.getCodigoAcesso());
+            String json = objectMapper.writeValueAsString(dto);
 
             // Act
             String responseJsonString = driver.perform(delete(URI_CLIENTES + "/" + cliente.getId())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                            .content(json)
+                            .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isNoContent()) // Codigo 204
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -1162,11 +1174,14 @@ public class ClienteControllerTests {
         void quandoExcluimosClienteInexistente() throws Exception {
             // Arrange
             // nenhuma necessidade além do setup()
+            CodigoAcessoDTO dto = new CodigoAcessoDTO();
+            dto.setCodigoAcesso(cliente.getCodigoAcesso());
+            String json = objectMapper.writeValueAsString(dto);
 
             // Act
             String responseJsonString = driver.perform(delete(URI_CLIENTES + "/" + 999999)
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                            .content(json)
+                            .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isBadRequest()) // Codigo 400
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -1184,11 +1199,14 @@ public class ClienteControllerTests {
         void quandoExcluimosClienteCodigoAcessoInvalido() throws Exception {
             // Arrange
             // nenhuma necessidade além do setup()
+            CodigoAcessoDTO dto = new CodigoAcessoDTO();
+            dto.setCodigoAcesso("111111");
+            String json = objectMapper.writeValueAsString(dto);
 
             // Act
             String responseJsonString = driver.perform(delete(URI_CLIENTES + "/" + cliente.getId())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .param("codigoAcesso", "invalido"))
+                            .content(json)
+                            .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isBadRequest()) // Codigo 400
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
