@@ -48,10 +48,10 @@ public class ResgateServiceImpl implements ResgateService {
     @Autowired
     ModelMapper modelMapper;
 
+    // TODO - o id do resgate muda antes e depois da aprovação, pois ele não é atualizado, outro é criado.
 
     @Override
     public ResgateResponseDTO solicitarResgate(Long idCliente, ResgatePostPutRequestDTO dto) {
-        // Recuperar cliente e ativo
         Cliente cliente = clienteService.buscarPorId(idCliente);
         // TODO - No geral, é melhor tratar com entidades ou DTO entre os Services? Aqui parece melhor entidade...
         AtivoResponseDTO ativo = ativoService.recuperar(dto.getIdAtivo());
@@ -98,7 +98,7 @@ public class ResgateServiceImpl implements ResgateService {
             executarResgate(resgate.getIdCliente(), idResgate);
         } else {
             resgateRepository.delete(resgate);
-
+            // TODO - tecnicamente ele não pede para notificar rejeições.
             Logger.alertUser(clienteDto.getNome(),
                     String.format("Seu resgate do ativo '%s' foi rejeitado!", ativoDto.getNome()));
         }
@@ -134,7 +134,7 @@ public class ResgateServiceImpl implements ResgateService {
         return modelMapper.map(resgate, ResgateResponseDTO.class);
     }
 
-    // Incompleto para testes
+    // TODO - Incompleto para testes, falta fazer os filtros funcionarem.
     @Override
     public List<ResgateResponseDTO> listarResgatesDoCliente(Long idCliente, String status, String periodoInicio, String periodoFim) {
         List<Resgate> resgates = resgateRepository.findByIdCliente(idCliente);

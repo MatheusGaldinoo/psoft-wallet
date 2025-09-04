@@ -14,5 +14,7 @@ public class AtivoCarteira {
     private double quantidade;
 
     private double valorAcumulado;
+
+    private double quantidadeAcumulada;
 }
 

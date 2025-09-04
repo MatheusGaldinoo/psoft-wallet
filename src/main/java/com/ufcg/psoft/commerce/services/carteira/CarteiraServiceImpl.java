@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.services.carteira;
 
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.dtos.carteira.AtivoCarteiraResponseDTO;
+import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.exceptions.BalancoInsuficienteException;
 import com.ufcg.psoft.commerce.exceptions.AtivoNaoExisteException;
 import com.ufcg.psoft.commerce.exceptions.QuantidadeInsuficienteException;
@@ -17,7 +18,9 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static java.lang.Math.round;
 
@@ -26,9 +29,6 @@ public class CarteiraServiceImpl implements CarteiraService {
 
     @Autowired
     private ClienteService clienteService;
-
-    @Autowired
-    private AtivoRepository ativoRepository;
 
     @Autowired
     private AtivoService ativoService;
@@ -40,7 +40,18 @@ public class CarteiraServiceImpl implements CarteiraService {
 
         validarBalancoSuficiente(idCliente, custoTotal);
 
-        carteira.aplicarCompra(idAtivo, quantidade, custoTotal);
+        Map<Long, AtivoCarteira> ativos = carteira.getAtivos();
+
+        if (ativos.containsKey(idAtivo)) {
+            AtivoCarteira ativoCarteira = ativos.get(idAtivo);
+            ativoCarteira.setQuantidade(ativoCarteira.getQuantidade() + quantidade);
+            ativoCarteira.setValorAcumulado(ativoCarteira.getValorAcumulado() + custoTotal);
+            ativoCarteira.setQuantidadeAcumulada(ativoCarteira.getQuantidadeAcumulada() + quantidade);
+        } else {
+            ativos.put(idAtivo, new AtivoCarteira(quantidade, custoTotal, quantidade));
+        }
+
+        carteira.setBalanco(carteira.getBalanco() - custoTotal);
 
         clienteService.salvar(cliente);
     }
@@ -54,20 +65,39 @@ public class CarteiraServiceImpl implements CarteiraService {
 
         validarQuantidadeDisponivel(idCliente, idAtivo, quantidade);
 
-        double precoMedio = ativoCarteira.getValorAcumulado() / ativoCarteira.getQuantidade();
+        // Estamos comparando o preço médio do valor acumulado de todas as compras daquele ativo,
+        // com quanto seria a mesma quantidade sob o preço atual para decidir desempenho e imposto.
+        double precoMedio = ativoCarteira.getValorAcumulado() / ativoCarteira.getQuantidadeAcumulada();
+        double valorVenda = ativo.getValor() * quantidade;
+        double custo = precoMedio * quantidade;
+        double lucro = valorVenda - custo;
+
+        double imposto = calcularImposto(ativo.getTipo(), lucro);
+        double valorLiquido = valorVenda - imposto;
 
         ativoCarteira.setQuantidade(ativoCarteira.getQuantidade() - quantidade);
-        // valor acumulado é o total das compras para calcular lucro em relação ao preço atual
-        // estamos diminuindo para manter o equilíbrio pro desempenho
-        ativoCarteira.setValorAcumulado(ativoCarteira.getValorAcumulado() - (precoMedio * quantidade));
 
         if (ativoCarteira.getQuantidade() <= 0) {
             carteira.getAtivos().remove(idAtivo);
         }
 
-        adicionarBalanco(idCliente, (ativo.getValor() * quantidade));
+        adicionarBalanco(idCliente, valorLiquido);
 
         clienteService.salvar(cliente);
+    }
+
+    private double calcularImposto(TipoAtivo tipoAtivo, double lucro) {
+        // TODO - Adicionar a quantidadeAcumulada no AtivoCarteiraResponseDTO e imposto no ResgateResponseDTO.
+        if (lucro <= 0) return 0.0;
+
+        return switch (tipoAtivo) {
+            case TESOURO_DIRETO -> lucro * 0.10;
+            case ACAO -> lucro * 0.15;
+            case CRIPTOMOEDA -> {
+                if (lucro <= 5000) yield lucro * 0.15;
+                else yield lucro * 0.225;
+            }
+        };
     }
 
     @Override
@@ -106,20 +136,20 @@ public class CarteiraServiceImpl implements CarteiraService {
 
         return carteira.getAtivos().entrySet().stream()
                 .map(e -> {
-                    Ativo ativo = ativoRepository.findById(e.getKey())
-                            .orElseThrow(AtivoNaoExisteException::new);
+                    AtivoResponseDTO ativo = ativoService.recuperar(e.getKey());
 
                     double valorAquisicaoAcumulado = e.getValue().getValorAcumulado();
                     double valorAtualUnitario = ativo.getValor();
-                    double quantidade = e.getValue().getQuantidade();
+                    double quantidadeAtual = e.getValue().getQuantidade();
+                    double quantidadeAcumulada = e.getValue().getQuantidadeAcumulada();
 
-                    double valorAtualTotal = round(valorAtualUnitario * quantidade, 2);
+                    double valorAtualTotal = round(valorAtualUnitario * quantidadeAcumulada, 2);
                     double desempenho = round(valorAtualTotal - valorAquisicaoAcumulado, 2);
 
                     return AtivoCarteiraResponseDTO.builder()
                             .idAtivo(e.getKey())
-                            .tipo(ativo.getTipo().getNomeTipo())
-                            .quantidade(quantidade)
+                            .tipo(ativo.getTipo())
+                            .quantidade(quantidadeAtual)
                             .valorAquisicaoAcumulado(valorAquisicaoAcumulado)
                             .valorAtualUnitario(valorAtualUnitario)
                             .desempenho(desempenho)

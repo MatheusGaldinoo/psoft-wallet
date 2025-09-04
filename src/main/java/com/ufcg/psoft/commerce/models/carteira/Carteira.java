@@ -29,15 +29,4 @@ public class Carteira {
     @MapKeyColumn(name = "ativo_id")
     @Builder.Default
     private Map<Long, AtivoCarteira> ativos = new HashMap<>();
-
-    public void aplicarCompra(Long idAtivo, double quantidade, double custoTotal) {
-        if (ativos.containsKey(idAtivo)) {
-            AtivoCarteira ativoCarteira = ativos.get(idAtivo);
-            ativoCarteira.setQuantidade(ativoCarteira.getQuantidade() + quantidade);
-            ativoCarteira.setValorAcumulado(ativoCarteira.getValorAcumulado() + custoTotal);
-        } else {
-            ativos.put(idAtivo, new AtivoCarteira(quantidade, custoTotal));
-        }
-        balanco -= custoTotal;
-    }
 }
