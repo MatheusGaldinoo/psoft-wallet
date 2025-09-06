@@ -50,6 +50,7 @@ public class AtivoServiceImpl implements AtivoService {
 
         Ativo ativo = ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
         modelMapper.map(dto, ativo);
+        ativoRepository.save(ativo);
         return modelMapper.map(ativo, AtivoResponseDTO.class);
     }
 

@@ -67,8 +67,6 @@ public class ResgateServiceImpl implements ResgateService {
                 .dataSolicitacao(LocalDateTime.now())
                 .build();
 
-        System.out.println("Imposto no Resgate: " + resgate.getImposto());
-
         resgateRepository.save(resgate);
         clienteService.salvar(cliente);
         // TODO - Acredito que pode tirar esse save de cliente
