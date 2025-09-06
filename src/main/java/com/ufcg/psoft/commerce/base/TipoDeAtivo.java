@@ -40,4 +40,6 @@ public abstract class TipoDeAtivo {
     @JsonProperty("nomeTipo")
     private TipoAtivo nomeTipo;
 
+    public abstract double calcularImposto(double lucro);
+
 }

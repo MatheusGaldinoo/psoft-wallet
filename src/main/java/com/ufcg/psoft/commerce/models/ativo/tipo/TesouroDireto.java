@@ -18,4 +18,10 @@ public class TesouroDireto extends TipoDeAtivo {
     public TipoAtivo getNomeTipo() {
         return TipoAtivo.TESOURO_DIRETO;
     }
+
+    @Override
+    public double calcularImposto(double lucro){
+        return lucro * 0.1;
+    }
+
 }

@@ -13,6 +13,9 @@ import com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
 import com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
 import com.ufcg.psoft.commerce.loggers.Logger;
 import com.ufcg.psoft.commerce.models.ativo.Ativo;
+import com.ufcg.psoft.commerce.models.ativo.tipo.Acao;
+import com.ufcg.psoft.commerce.models.ativo.tipo.CriptoMoeda;
+import com.ufcg.psoft.commerce.models.ativo.tipo.TesouroDireto;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
@@ -122,6 +125,11 @@ public class AtivoServiceImpl implements AtivoService {
         return ativoRepository.findById(id)
                 .map(AtivoResponseDTO::new)
                 .orElseThrow(AtivoNaoExisteException::new);
+    }
+
+    @Override
+    public Ativo buscarPorId(Long id){
+        return ativoRepository.findById(id).orElseThrow(AtivoNaoExisteException::new);
     }
 
     @Override

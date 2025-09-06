@@ -18,4 +18,10 @@ public class Acao extends TipoDeAtivo{
     public TipoAtivo getNomeTipo() {
         return TipoAtivo.ACAO;
     }
+
+    @Override
+    public double calcularImposto(double lucro){
+        return lucro * 0.15;
+    }
+
 }

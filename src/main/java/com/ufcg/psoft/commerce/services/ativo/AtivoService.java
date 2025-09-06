@@ -1,9 +1,11 @@
 package com.ufcg.psoft.commerce.services.ativo;
 
+import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoCotacaoRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
+import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 
@@ -20,6 +22,8 @@ public interface AtivoService {
     List<AtivoResponseDTO> listarFiltrandoPorTipo(List<TipoAtivo> tiposParaFiltrar);
 
     AtivoResponseDTO recuperar(Long id);
+
+    Ativo buscarPorId(Long id);
 
     AtivoResponseDTO criar(AtivoPostPutRequestDTO ativoPostPutRequestDTO);
 

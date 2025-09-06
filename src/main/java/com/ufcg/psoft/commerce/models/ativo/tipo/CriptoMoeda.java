@@ -18,4 +18,13 @@ public class CriptoMoeda extends TipoDeAtivo{
     public TipoAtivo getNomeTipo() {
         return TipoAtivo.CRIPTOMOEDA;
     }
+
+    @Override
+    public double calcularImposto(double lucro){
+
+        if (lucro <= 5.000) return lucro * 0.15;
+
+        return lucro * 0.225;
+    }
+
 }

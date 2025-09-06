@@ -11,7 +11,9 @@ import java.util.List;
 public interface CarteiraService {
     void aplicarCompra(Long idCliente, Long idAtivo, double quantidade, double precoUnitario);
 
-    void aplicarResgate(Long idCliente, Long idAtivo, double quantidade);
+    void aplicarResgate(Long idCliente, double impostoResgate, Long idAtivo, double quantidade);
+
+    double calcularImpostoDevido(Long idCliente, Long idAtivo, double quantidade);
 
     void validarBalancoSuficiente(Long idCliente, double valor);
 

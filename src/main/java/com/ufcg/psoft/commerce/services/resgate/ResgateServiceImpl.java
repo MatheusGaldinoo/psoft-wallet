@@ -7,10 +7,7 @@ import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.enums.DecisaoAdministrador;
 import com.ufcg.psoft.commerce.enums.EstadoResgate;
-import com.ufcg.psoft.commerce.exceptions.ResgateNaoConfirmadoException;
-import com.ufcg.psoft.commerce.exceptions.ResgateNaoEncontradoException;
-import com.ufcg.psoft.commerce.exceptions.ResgateNaoPendenteException;
-import com.ufcg.psoft.commerce.exceptions.ResgateNaoPertenceAoClienteException;
+import com.ufcg.psoft.commerce.exceptions.*;
 import com.ufcg.psoft.commerce.loggers.Logger;
 import com.ufcg.psoft.commerce.models.transacao.Resgate;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
@@ -58,17 +55,23 @@ public class ResgateServiceImpl implements ResgateService {
 
         carteiraService.validarQuantidadeDisponivel(idCliente, dto.getIdAtivo(), dto.getQuantidade());
 
+        double imposto = carteiraService.calcularImpostoDevido(idCliente, dto.getIdAtivo(), dto.getQuantidade());
+
         Resgate resgate = Resgate.builder()
                 .idCliente(idCliente)
                 .idAtivo(dto.getIdAtivo())
                 .quantidade(dto.getQuantidade())
                 .precoUnitario(ativo.getValor())
+                .imposto(imposto)
                 .valorTotal(ativo.getValor() * dto.getQuantidade())
                 .dataSolicitacao(LocalDateTime.now())
                 .build();
 
+        System.out.println("Imposto no Resgate: " + resgate.getImposto());
+
         resgateRepository.save(resgate);
         clienteService.salvar(cliente);
+        // TODO - Acredito que pode tirar esse save de cliente
 
         return modelMapper.map(resgate, ResgateResponseDTO.class);
     }
@@ -122,7 +125,9 @@ public class ResgateServiceImpl implements ResgateService {
             throw new ResgateNaoConfirmadoException();
         }
 
-        carteiraService.aplicarResgate(idCliente, resgate.getIdAtivo(), resgate.getQuantidade());
+        ResgateResponseDTO resgateDTO = modelMapper.map(resgate, ResgateResponseDTO.class);
+
+        carteiraService.aplicarResgate(idCliente, resgateDTO.getImposto(), resgate.getIdAtivo(), resgate.getQuantidade());
 
         //Para EmConta
         resgate.modificarEstadoResgate();
@@ -150,5 +155,10 @@ public class ResgateServiceImpl implements ResgateService {
     @Override
     public List<ResgateResponseDTO> listarResgates(Long clienteId, String status, String periodoInicio, String periodoFim) {
         return List.of();
+    }
+
+    @Override
+    public Resgate buscarPorId(Long idResgate) {
+        return resgateRepository.findById(idResgate).orElseThrow(ResgateNaoEncontradoException::new);
     }
 }

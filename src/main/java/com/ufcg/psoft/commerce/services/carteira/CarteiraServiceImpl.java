@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.services.carteira;
 
+import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.dtos.carteira.AtivoCarteiraResponseDTO;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
@@ -9,10 +10,14 @@ import com.ufcg.psoft.commerce.exceptions.QuantidadeInsuficienteException;
 import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.models.carteira.AtivoCarteira;
 import com.ufcg.psoft.commerce.models.carteira.Carteira;
+import com.ufcg.psoft.commerce.models.transacao.Resgate;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
+import com.ufcg.psoft.commerce.repositories.ResgateRepository;
 import com.ufcg.psoft.commerce.services.ativo.AtivoService;
 import com.ufcg.psoft.commerce.services.cliente.ClienteService;
+import com.ufcg.psoft.commerce.services.resgate.ResgateService;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -32,6 +37,9 @@ public class CarteiraServiceImpl implements CarteiraService {
 
     @Autowired
     private AtivoService ativoService;
+
+    @Autowired
+    private ModelMapper modelMapper;
 
     @Override
     public void aplicarCompra(Long idCliente, Long idAtivo, double quantidade, double custoTotal) {
@@ -57,23 +65,16 @@ public class CarteiraServiceImpl implements CarteiraService {
     }
 
     @Override
-    public void aplicarResgate(Long idCliente, Long idAtivo, double quantidade) {
+    public void aplicarResgate(Long idCliente, double impostoResgate, Long idAtivo, double quantidade) {
+        validarQuantidadeDisponivel(idCliente, idAtivo, quantidade);
         Cliente cliente = clienteService.buscarPorId(idCliente);
         Carteira carteira = cliente.getCarteira();
         AtivoCarteira ativoCarteira = carteira.getAtivos().get(idAtivo);
         AtivoResponseDTO ativo = ativoService.recuperar(idAtivo);
 
-        validarQuantidadeDisponivel(idCliente, idAtivo, quantidade);
-
-        // Estamos comparando o preço médio do valor acumulado de todas as compras daquele ativo,
-        // com quanto seria a mesma quantidade sob o preço atual para decidir desempenho e imposto.
-        double precoMedio = ativoCarteira.getValorAcumulado() / ativoCarteira.getQuantidadeAcumulada();
         double valorVenda = ativo.getValor() * quantidade;
-        double custo = precoMedio * quantidade;
-        double lucro = valorVenda - custo;
 
-        double imposto = calcularImposto(ativo.getTipo(), lucro);
-        double valorLiquido = valorVenda - imposto;
+        double valorLiquido = valorVenda - impostoResgate;
 
         ativoCarteira.setQuantidade(ativoCarteira.getQuantidade() - quantidade);
 
@@ -86,18 +87,29 @@ public class CarteiraServiceImpl implements CarteiraService {
         clienteService.salvar(cliente);
     }
 
-    private double calcularImposto(TipoAtivo tipoAtivo, double lucro) {
+    @Override
+    public double calcularImpostoDevido(Long idCliente, Long idAtivo, double quantidade){
+        Cliente cliente = clienteService.buscarPorId(idCliente);
+        Carteira carteira = cliente.getCarteira();
+        AtivoCarteira ativoCarteira = carteira.getAtivos().get(idAtivo);
+        Ativo ativo = ativoService.buscarPorId(idAtivo);
+
+        // Estamos comparando o preço médio do valor acumulado de todas as compras daquele ativo,
+        // com quanto seria a mesma quantidade sob o preço atual para decidir desempenho e imposto.
+        double precoMedio = ativoCarteira.getValorAcumulado() / ativoCarteira.getQuantidadeAcumulada();
+        double valorVenda = ativo.getValor() * quantidade;
+        double custo = precoMedio * quantidade;
+        double lucro = valorVenda - custo;
+
+        return calcularImpostoTipoAtivo(ativo, lucro);
+    }
+
+
+    private double calcularImpostoTipoAtivo(Ativo ativo, double lucro) {
         // TODO - Adicionar a quantidadeAcumulada no AtivoCarteiraResponseDTO e imposto no ResgateResponseDTO.
         if (lucro <= 0) return 0.0;
 
-        return switch (tipoAtivo) {
-            case TESOURO_DIRETO -> lucro * 0.10;
-            case ACAO -> lucro * 0.15;
-            case CRIPTOMOEDA -> {
-                if (lucro <= 5000) yield lucro * 0.15;
-                else yield lucro * 0.225;
-            }
-        };
+        return ativo.getTipo().calcularImposto(lucro);
     }
 
     @Override

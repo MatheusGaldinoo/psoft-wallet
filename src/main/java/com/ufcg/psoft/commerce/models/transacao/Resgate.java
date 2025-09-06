@@ -24,6 +24,10 @@ public class Resgate extends Transacao {
     private EstadoResgateState estado;
 
     @NotNull
+    @JsonProperty("imposto")
+    private double imposto;
+
+    @NotNull
     @Builder.Default
     @Enumerated(EnumType.STRING)
     @JsonProperty("estado_atual")
