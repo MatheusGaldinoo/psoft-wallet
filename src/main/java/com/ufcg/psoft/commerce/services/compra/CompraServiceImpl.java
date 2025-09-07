@@ -4,8 +4,12 @@ import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
+import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
+import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
 import com.ufcg.psoft.commerce.enums.EstadoCompra;
+import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.exceptions.*;
+import com.ufcg.psoft.commerce.interfaces.transacao.TransacaoStrategy;
 import com.ufcg.psoft.commerce.loggers.Logger;
 import com.ufcg.psoft.commerce.models.transacao.Compra;
 import com.ufcg.psoft.commerce.repositories.CompraRepository;
@@ -19,11 +23,12 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-public class CompraServiceImpl implements CompraService {
+public class CompraServiceImpl implements CompraService, TransacaoStrategy {
 
 
     @Autowired
@@ -148,6 +153,18 @@ public class CompraServiceImpl implements CompraService {
     public List<CompraResponseDTO> listarComprasDoCliente(Long idCliente) {
         List<Compra> compras = compraRepository.findByIdCliente(idCliente);
         return compras.stream().map(compra -> modelMapper.map(compra, CompraResponseDTO.class)).toList();
+    }
+
+    @Override
+    public List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, LocalDateTime dataInicio, LocalDateTime dataFim){
+        List<Compra> compras = compraRepository.findAllCompras(clienteId, tipoAtivo, dataInicio, dataFim);
+        return compras.stream()
+                .map(compra -> {
+                    CompraResponseDTO compraDTO = modelMapper.map(compra, CompraResponseDTO.class);
+                    TransacaoResponseDTO transacaoDTO = new TransacaoResponseDTO();
+                    transacaoDTO.setCompra(compraDTO);
+                    return transacaoDTO;
+                }).toList();
     }
 
 }

@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.controllers;
 
+import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.AtualizarStatusResgateDTO;
@@ -56,17 +57,4 @@ public class ResgateController {
         return ResponseEntity.ok(resgateService.atualizarStatusResgate(idResgate, dto));
     }
 
-    /*
-    // US19 - Admin lista todos os resgates do sistema (com filtros)
-    @GetMapping("/resgates")
-    public ResponseEntity<List<ResgateResponseDTO>> listarResgates(
-            @RequestParam(required = false) Long clienteId,
-            @RequestParam(required = false) String status,
-            @RequestParam(required = false) String periodoInicio,
-            @RequestParam(required = false) String periodoFim) {
-        return ResponseEntity.ok(
-                resgateService.listarResgates(clienteId, status, periodoInicio, periodoFim)
-        );
-    }
-     */
 }
