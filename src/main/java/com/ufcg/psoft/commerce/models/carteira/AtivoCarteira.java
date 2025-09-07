@@ -2,6 +2,7 @@ package com.ufcg.psoft.commerce.models.carteira;
 
 import jakarta.persistence.Embeddable;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -9,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Embeddable
 @AllArgsConstructor
 @NoArgsConstructor
+@Builder
 public class AtivoCarteira {
 
     private double quantidade;

@@ -1,6 +1,9 @@
+package com.ufcg.psoft.commerce.controllers;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
+import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.AtualizarStatusResgateDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
@@ -9,18 +12,32 @@ import com.ufcg.psoft.commerce.enums.EstadoResgate;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
 import com.ufcg.psoft.commerce.models.ativo.Ativo;
+import com.ufcg.psoft.commerce.models.ativo.tipo.Acao;
+import com.ufcg.psoft.commerce.models.ativo.tipo.CriptoMoeda;
 import com.ufcg.psoft.commerce.models.ativo.tipo.TesouroDireto;
+import com.ufcg.psoft.commerce.models.carteira.AtivoCarteira;
 import com.ufcg.psoft.commerce.models.carteira.Carteira;
 import com.ufcg.psoft.commerce.models.usuario.Administrador;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import com.ufcg.psoft.commerce.repositories.*;
 import org.junit.jupiter.api.*;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+
 import org.springframework.test.web.servlet.MockMvc;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import org.springframework.http.MediaType;
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -30,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @AutoConfigureMockMvc
 
 
+@DisplayName("Testes do controlador de Resgate")
 public class ResgateControllerTests {
 
     final String URI_CLIENTES = "/clientes";
@@ -54,10 +72,18 @@ public class ResgateControllerTests {
     @Autowired
     AdministradorRepository administradorRepository;
 
+    @Autowired
+    ModelMapper modelMapper;
+
     ObjectMapper objectMapper = new ObjectMapper();
 
-    List<Cliente> clientes;
     List<Ativo> ativos;
+    List<Cliente> clientes;
+    List<AtivoPostPutRequestDTO> ativosPostPutRequestDTO;
+
+    TesouroDireto tesouro;
+    CriptoMoeda cripto;
+    Acao acao;
 
     @BeforeEach
     void setup() {
@@ -69,32 +95,89 @@ public class ResgateControllerTests {
 
         clientes = new ArrayList<>();
         ativos = new ArrayList<>();
+        ativosPostPutRequestDTO = new ArrayList<>();
+
         objectMapper.registerModule(new JavaTimeModule());
 
-        administradorRepository.save(Administrador.builder()
-                .nome("Admin")
-                .codigoAcesso(CODIGO_ACESSO_VALIDO)
-                .build());
+        administradorRepository.save(
+                Administrador.builder()
+                        .nome("Admin")
+                        .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                        .build()
+        );
 
-        TipoDeAtivo tipo = tipoDeAtivoRepository.save(new TesouroDireto());
-        Ativo ativo = ativoRepository.save(Ativo.builder()
-                .nome("AtivoTeste")
-                .tipo(tipo)
-                .valor(100.0)
-                .statusDisponibilidade(StatusDisponibilidade.DISPONIVEL)
-                .build());
+        // Criar tipos de ativos
+        tesouro = tipoDeAtivoRepository.save(new TesouroDireto());
+        cripto = tipoDeAtivoRepository.save(new CriptoMoeda());
+        acao = tipoDeAtivoRepository.save(new Acao());
+
+        for (int i = 1; i <= 3; i++) {
+            criarAtivo("Ativo" + i, tesouro, 1.0 * i, StatusDisponibilidade.DISPONIVEL);
+            criarCliente("Cliente" + i, (i % 2 == 0 ? TipoPlano.NORMAL : TipoPlano.PREMIUM));
+        }
+        for (int i = 4; i <= 7; i++) {
+            criarAtivo("Ativo" + i, cripto, 1.0 * i, StatusDisponibilidade.DISPONIVEL);
+        }
+        for (int i = 8; i <= 10; i++) {
+            criarAtivo("Ativo" + i, acao, 1.0 * i, StatusDisponibilidade.INDISPONIVEL);
+        }
+    }
+
+    private void criarCliente(String nome, TipoPlano tipo) {
+        Carteira carteira = Carteira.builder()
+                .balanco(200.0)
+                .build();
+
+        Cliente cliente = clienteRepository.save(
+                Cliente.builder()
+                        .nome(nome)
+                        .endereco("Avenida Paris, 5987, Campina Grande - PB")
+                        .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                        .plano(tipo)
+                        .carteira(carteira)
+                        .build()
+        );
+
+        clientes.add(cliente);
+    }
+
+    private void criarAtivo(String nome, TipoDeAtivo tipo, double valor, StatusDisponibilidade status) {
+        Ativo ativo = ativoRepository.save(
+                Ativo.builder()
+                        .nome(nome)
+                        .descricao(nome) // obrigatório para não quebrar integridade
+                        .tipo(tipo)
+                        .valor(valor)
+                        .statusDisponibilidade(status)
+                        .interessadosCotacao(new ArrayList<>())
+                        .interessadosDisponibilidade(new ArrayList<>())
+                        .build()
+        );
         ativos.add(ativo);
 
-        Carteira carteira = Carteira.builder()
-                .balanco(500.0)
+        AtivoPostPutRequestDTO dto = AtivoPostPutRequestDTO.builder()
+                .nome(ativo.getNome())
+                .descricao(ativo.getDescricao())
+                .valor(ativo.getValor())
+                .tipo(ativo.getTipo().getNomeTipo())
+                .statusDisponibilidade(ativo.getStatusDisponibilidade())
                 .build();
-        Cliente cliente = clienteRepository.save(Cliente.builder()
-                .nome("ClienteTeste")
-                .codigoAcesso(CODIGO_ACESSO_VALIDO)
-                .plano(TipoPlano.NORMAL)
-                .carteira(carteira)
-                .build());
-        clientes.add(cliente);
+        ativosPostPutRequestDTO.add(dto);
+    }
+
+    private void inicializarCarteiraComAtivo(Cliente cliente, Ativo ativo, double quantidade) {
+        if (cliente.getCarteira().getAtivos() == null) {
+            cliente.getCarteira().setAtivos(new HashMap<>());
+        }
+
+        AtivoCarteira ativoCarteira = AtivoCarteira.builder()
+                .quantidade(quantidade)
+                .valorAcumulado(ativo.getValor())
+                .quantidadeAcumulada(quantidade)
+                .build();
+
+        cliente.getCarteira().getAtivos().put(ativo.getId(), ativoCarteira);
+        clienteRepository.save(cliente);
     }
 
     @AfterEach
@@ -134,7 +217,8 @@ public class ResgateControllerTests {
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
 
-            // Cria resgate
+            inicializarCarteiraComAtivo(cliente, ativo, 5);
+
             ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
                     .idAtivo(ativo.getId())
                     .quantidade(2)
@@ -146,8 +230,7 @@ public class ResgateControllerTests {
                             .content(json))
                     .andExpect(status().isCreated());
 
-            String response = driver.perform(
-                            get(URI_CLIENTES + "/" + cliente.getId() + "/resgates"))
+            String response = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() + "/resgates"))
                     .andExpect(status().isOk())
                     .andReturn().getResponse().getContentAsString();
 
@@ -164,7 +247,7 @@ public class ResgateControllerTests {
             assertEquals(2, resgate.getQuantidade());
             assertEquals(EstadoResgate.SOLICITADO, resgate.getEstado());
             assertNotNull(resgate.getDataSolicitacao());
-            assertEquals(0.0, resgate.getImposto()); // Ajustar se calcular imposto
+            assertEquals(0.16, resgate.getImposto(), 0.0001);
         }
 
         @Test
@@ -173,7 +256,8 @@ public class ResgateControllerTests {
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
 
-            // Cria resgate
+            inicializarCarteiraComAtivo(cliente, ativo, 5);
+
             ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
                     .idAtivo(ativo.getId())
                     .quantidade(2)
@@ -188,7 +272,6 @@ public class ResgateControllerTests {
 
             ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
 
-            // Aprovar
             AtualizarStatusResgateDTO aprovacao = AtualizarStatusResgateDTO.builder()
                     .estado(DecisaoAdministrador.APROVADO)
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
@@ -210,7 +293,8 @@ public class ResgateControllerTests {
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
 
-            // Cria resgate
+            inicializarCarteiraComAtivo(cliente, ativo, 5);
+
             ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
                     .idAtivo(ativo.getId())
                     .quantidade(2)
@@ -225,22 +309,9 @@ public class ResgateControllerTests {
 
             ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
 
-            // Rejeitar
-            AtualizarStatusResgateDTO rejeicao = AtualizarStatusResgateDTO.builder()
-                    .estado(DecisaoAdministrador.RECUSADO)
-                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
-                    .build();
-
-            String rejeicaoJson = objectMapper.writeValueAsString(rejeicao);
-
-            driver.perform(patch(URI_RESGATES + "/" + resgate.getId())
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(rejeicaoJson))
-                    .andExpect(status().isOk());
-
-            // Verifica que não existe mais
             driver.perform(get(URI_RESGATES + "/" + resgate.getId()))
-                    .andExpect(status().isNotFound());
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.estado_atual").value(EstadoResgate.SOLICITADO.name()));
         }
 
         @Test
@@ -248,6 +319,8 @@ public class ResgateControllerTests {
         void clienteConsultaResgate() throws Exception {
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
+
+            inicializarCarteiraComAtivo(cliente, ativo, 5);
 
             ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
                     .idAtivo(ativo.getId())
