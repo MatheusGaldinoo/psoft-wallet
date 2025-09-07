@@ -1,0 +1,280 @@
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.ufcg.psoft.commerce.base.TipoDeAtivo;
+import com.ufcg.psoft.commerce.dtos.resgate.AtualizarStatusResgateDTO;
+import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
+import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
+import com.ufcg.psoft.commerce.enums.DecisaoAdministrador;
+import com.ufcg.psoft.commerce.enums.EstadoResgate;
+import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
+import com.ufcg.psoft.commerce.enums.TipoPlano;
+import com.ufcg.psoft.commerce.models.ativo.Ativo;
+import com.ufcg.psoft.commerce.models.ativo.tipo.TesouroDireto;
+import com.ufcg.psoft.commerce.models.carteira.Carteira;
+import com.ufcg.psoft.commerce.models.usuario.Administrador;
+import com.ufcg.psoft.commerce.models.usuario.Cliente;
+import com.ufcg.psoft.commerce.repositories.*;
+import org.junit.jupiter.api.*;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+
+@SpringBootTest
+@AutoConfigureMockMvc
+
+
+public class ResgateControllerTests {
+
+    final String URI_CLIENTES = "/clientes";
+    final String URI_RESGATES = "/resgates";
+    final String CODIGO_ACESSO_VALIDO = "123456";
+
+    @Autowired
+    MockMvc driver;
+
+    @Autowired
+    ResgateRepository resgateRepository;
+
+    @Autowired
+    ClienteRepository clienteRepository;
+
+    @Autowired
+    AtivoRepository ativoRepository;
+
+    @Autowired
+    TipoDeAtivoRepository tipoDeAtivoRepository;
+
+    @Autowired
+    AdministradorRepository administradorRepository;
+
+    ObjectMapper objectMapper = new ObjectMapper();
+
+    List<Cliente> clientes;
+    List<Ativo> ativos;
+
+    @BeforeEach
+    void setup() {
+        resgateRepository.deleteAll();
+        ativoRepository.deleteAll();
+        tipoDeAtivoRepository.deleteAll();
+        clienteRepository.deleteAll();
+        administradorRepository.deleteAll();
+
+        clientes = new ArrayList<>();
+        ativos = new ArrayList<>();
+        objectMapper.registerModule(new JavaTimeModule());
+
+        administradorRepository.save(Administrador.builder()
+                .nome("Admin")
+                .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                .build());
+
+        TipoDeAtivo tipo = tipoDeAtivoRepository.save(new TesouroDireto());
+        Ativo ativo = ativoRepository.save(Ativo.builder()
+                .nome("AtivoTeste")
+                .tipo(tipo)
+                .valor(100.0)
+                .statusDisponibilidade(StatusDisponibilidade.DISPONIVEL)
+                .build());
+        ativos.add(ativo);
+
+        Carteira carteira = Carteira.builder()
+                .balanco(500.0)
+                .build();
+        Cliente cliente = clienteRepository.save(Cliente.builder()
+                .nome("ClienteTeste")
+                .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                .plano(TipoPlano.NORMAL)
+                .carteira(carteira)
+                .build());
+        clientes.add(cliente);
+    }
+
+    @AfterEach
+    void tearDown() {
+        resgateRepository.deleteAll();
+        ativoRepository.deleteAll();
+        tipoDeAtivoRepository.deleteAll();
+        clienteRepository.deleteAll();
+        administradorRepository.deleteAll();
+    }
+
+    @Nested
+    @DisplayName("GET /clientes/{idCliente}/resgates - Cliente acompanha resgates")
+    class AcompanharResgates {
+
+        @Test
+        @DisplayName("Cliente sem resgates")
+        void clienteSemResgates() throws Exception {
+            Cliente cliente = clientes.get(0);
+
+            String response = driver.perform(
+                            get(URI_CLIENTES + "/" + cliente.getId() + "/resgates"))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<ResgateResponseDTO> resgates = objectMapper.readValue(
+                    response,
+                    new TypeReference<List<ResgateResponseDTO>>() {}
+            );
+
+            assertEquals(0, resgates.size());
+        }
+
+        @Test
+        @DisplayName("Cliente com resgate solicitado")
+        void clienteComResgateSolicitado() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            // Cria resgate
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(2)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
+            driver.perform(post(URI_CLIENTES + "/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isCreated());
+
+            String response = driver.perform(
+                            get(URI_CLIENTES + "/" + cliente.getId() + "/resgates"))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<ResgateResponseDTO> resgates = objectMapper.readValue(
+                    response,
+                    new TypeReference<List<ResgateResponseDTO>>() {}
+            );
+
+            assertEquals(1, resgates.size());
+            ResgateResponseDTO resgate = resgates.get(0);
+
+            assertEquals(cliente.getId(), resgate.getIdCliente());
+            assertEquals(ativo.getId(), resgate.getIdAtivo());
+            assertEquals(2, resgate.getQuantidade());
+            assertEquals(EstadoResgate.SOLICITADO, resgate.getEstado());
+            assertNotNull(resgate.getDataSolicitacao());
+            assertEquals(0.0, resgate.getImposto()); // Ajustar se calcular imposto
+        }
+
+        @Test
+        @DisplayName("Admin aprova resgate")
+        void adminAprovaResgate() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            // Cria resgate
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(2)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
+            String resgateJson = driver.perform(post(URI_CLIENTES + "/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isCreated())
+                    .andReturn().getResponse().getContentAsString();
+
+            ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
+
+            // Aprovar
+            AtualizarStatusResgateDTO aprovacao = AtualizarStatusResgateDTO.builder()
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgate.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(aprovacaoJson))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.estado_atual").value(EstadoResgate.EM_CONTA.name())); // Ajustar se quiser CONFIRMADO primeiro
+        }
+
+        @Test
+        @DisplayName("Admin rejeita resgate")
+        void adminRejeitaResgate() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            // Cria resgate
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(2)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
+            String resgateJson = driver.perform(post(URI_CLIENTES + "/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isCreated())
+                    .andReturn().getResponse().getContentAsString();
+
+            ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
+
+            // Rejeitar
+            AtualizarStatusResgateDTO rejeicao = AtualizarStatusResgateDTO.builder()
+                    .estado(DecisaoAdministrador.RECUSADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+
+            String rejeicaoJson = objectMapper.writeValueAsString(rejeicao);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgate.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(rejeicaoJson))
+                    .andExpect(status().isOk());
+
+            // Verifica que não existe mais
+            driver.perform(get(URI_RESGATES + "/" + resgate.getId()))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("Cliente consulta resgate específico")
+        void clienteConsultaResgate() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(3)
+                    .build();
+
+            String json = objectMapper.writeValueAsString(dto);
+
+            String resgateJson = driver.perform(post(URI_CLIENTES + "/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isCreated())
+                    .andReturn().getResponse().getContentAsString();
+
+            ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
+
+            String consultaJson = driver.perform(get(URI_RESGATES + "/" + resgate.getId()))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            ResgateResponseDTO resgateConsultado = objectMapper.readValue(consultaJson, ResgateResponseDTO.class);
+
+            assertEquals(resgate.getId(), resgateConsultado.getId());
+            assertEquals(resgate.getIdCliente(), resgateConsultado.getIdCliente());
+            assertEquals(resgate.getEstado(), resgateConsultado.getEstado());
+            assertEquals(resgate.getQuantidade(), resgateConsultado.getQuantidade());
+            assertEquals(resgate.getIdAtivo(), resgateConsultado.getIdAtivo());
+        }
+    }
+}
