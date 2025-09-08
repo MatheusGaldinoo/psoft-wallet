@@ -106,7 +106,6 @@ public class ResgateControllerTests {
                         .build()
         );
 
-        // Criar tipos de ativos
         tesouro = tipoDeAtivoRepository.save(new TesouroDireto());
         cripto = tipoDeAtivoRepository.save(new CriptoMoeda());
         acao = tipoDeAtivoRepository.save(new Acao());
@@ -212,6 +211,13 @@ public class ResgateControllerTests {
         }
 
         @Test
+        @DisplayName("Cliente consulta resgate inexistente retorna 404")
+        void consultaResgateInexistente() throws Exception {
+            driver.perform(get(URI_RESGATES + "/999999"))
+                    .andExpect(status().isNotFound());
+        }
+
+        @Test
         @DisplayName("Cliente com resgate solicitado")
         void clienteComResgateSolicitado() throws Exception {
             Cliente cliente = clientes.get(0);
@@ -284,7 +290,7 @@ public class ResgateControllerTests {
                             .content(aprovacaoJson))
                     .andExpect(status().isOk())
                     .andDo(print())
-                    .andExpect(jsonPath("$.estado_atual").value(EstadoResgate.EM_CONTA.name())); // Ajustar se quiser CONFIRMADO primeiro
+                    .andExpect(jsonPath("$.estado_atual").value(EstadoResgate.CONFIRMADO.name()));
         }
 
         @Test
@@ -309,9 +315,17 @@ public class ResgateControllerTests {
 
             ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
 
-            driver.perform(get(URI_RESGATES + "/" + resgate.getId()))
-                    .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.estado_atual").value(EstadoResgate.SOLICITADO.name()));
+            AtualizarStatusResgateDTO rejeicao = AtualizarStatusResgateDTO.builder()
+                    .estado(DecisaoAdministrador.RECUSADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+
+            String rejeicaoJson = objectMapper.writeValueAsString(rejeicao);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgate.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(rejeicaoJson))
+                    .andExpect(status().isConflict());
         }
 
         @Test
@@ -348,6 +362,155 @@ public class ResgateControllerTests {
             assertEquals(resgate.getEstado(), resgateConsultado.getEstado());
             assertEquals(resgate.getQuantidade(), resgateConsultado.getQuantidade());
             assertEquals(resgate.getIdAtivo(), resgateConsultado.getIdAtivo());
+        }
+
+        @Test
+        @DisplayName("Fluxo completo: Solicitar → Aprovar → Executar → Em conta")
+        void fluxoCompletoResgate() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            inicializarCarteiraComAtivo(cliente, ativo, 5);
+
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(2)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
+            String resgateJson = driver.perform(post(URI_CLIENTES + "/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isCreated())
+                    .andReturn().getResponse().getContentAsString();
+
+            ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
+
+            AtualizarStatusResgateDTO aprovacao = AtualizarStatusResgateDTO.builder()
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgate.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(aprovacaoJson))
+                    .andExpect(status().isOk());
+
+            driver.perform(post(URI_RESGATES + "/" + resgate.getId() + "/executar")
+                            .param("idCliente", String.valueOf(cliente.getId())))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.estado_atual").value(EstadoResgate.EM_CONTA.name()))
+                    .andExpect(jsonPath("$.data_finalizacao").exists());
+        }
+
+
+        @Test
+        @DisplayName("Tentativa de executar resgate de outro cliente lança exceção")
+        void executarResgateClienteErrado() throws Exception {
+            Cliente cliente1 = clientes.get(0);
+            Cliente cliente2 = clientes.get(1);
+            Ativo ativo = ativos.get(0);
+
+            inicializarCarteiraComAtivo(cliente1, ativo, 5);
+
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(1)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
+            String resgateJson = driver.perform(post(URI_CLIENTES + "/" + cliente1.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isCreated())
+                    .andReturn().getResponse().getContentAsString();
+
+            ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
+
+            AtualizarStatusResgateDTO aprovacao = AtualizarStatusResgateDTO.builder()
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgate.getId())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(aprovacaoJson))
+                    .andExpect(status().isOk());
+
+            driver.perform(post(URI_RESGATES + "/" + resgate.getId() + "/executar")
+                            .param("idCliente", String.valueOf(cliente2.getId())))
+                    .andExpect(status().isForbidden());
+        }
+
+        @Test
+        @DisplayName("Tentativa de executar resgate não confirmado lança exceção")
+        void executarResgateNaoConfirmado() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            inicializarCarteiraComAtivo(cliente, ativo, 5);
+
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(1)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
+            String resgateJson = driver.perform(post(URI_CLIENTES + "/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isCreated())
+                    .andReturn().getResponse().getContentAsString();
+
+            ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
+
+            driver.perform(post(URI_RESGATES + "/" + resgate.getId() + "/executar")
+                            .param("idCliente", String.valueOf(cliente.getId())))
+                    .andExpect(status().isConflict());
+        }
+
+        @Test
+        @DisplayName("Cliente lista múltiplos resgates com diferentes estados")
+        void listarMultiplosResgates() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo1 = ativos.get(0);
+            Ativo ativo2 = ativos.get(1);
+
+            inicializarCarteiraComAtivo(cliente, ativo1, 5);
+            inicializarCarteiraComAtivo(cliente, ativo2, 5);
+
+            ResgatePostPutRequestDTO dto1 = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo1.getId())
+                    .quantidade(1)
+                    .build();
+            driver.perform(post(URI_CLIENTES + "/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto1)))
+                    .andExpect(status().isCreated());
+
+            ResgatePostPutRequestDTO dto2 = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo2.getId())
+                    .quantidade(2)
+                    .build();
+            driver.perform(post(URI_CLIENTES + "/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(dto2)))
+                    .andExpect(status().isCreated());
+
+            String response = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() + "/resgates"))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<ResgateResponseDTO> resgates = objectMapper.readValue(
+                    response,
+                    new TypeReference<List<ResgateResponseDTO>>() {}
+            );
+
+            assertEquals(2, resgates.size());
+            assertEquals(EstadoResgate.SOLICITADO, resgates.get(0).getEstado());
+            assertEquals(EstadoResgate.SOLICITADO, resgates.get(1).getEstado());
         }
     }
 }

@@ -56,6 +56,14 @@ public class ResgateController {
         return ResponseEntity.ok(resgateService.atualizarStatusResgate(idResgate, dto));
     }
 
+    @PostMapping("/resgates/{idResgate}/executar")
+    public ResponseEntity<ResgateResponseDTO> executarResgate(
+            @PathVariable Long idResgate,
+            @RequestParam Long idCliente // ou pegar do token JWT
+    ) {
+        return ResponseEntity.ok(resgateService.executarResgate(idCliente, idResgate));
+    }
+
     /*
     // US19 - Admin lista todos os resgates do sistema (com filtros)
     @GetMapping("/resgates")
