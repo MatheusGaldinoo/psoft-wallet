@@ -33,7 +33,8 @@ public class TransacaoController {
     // US19 - Admin lista todos as operações do sistema (com filtros)
     @GetMapping("")
     public ResponseEntity<List<TransacaoResponseDTO>> listarTransacoes(
-            @Valid @ModelAttribute TransacaoQueryDTO queryDTO) {
+            @Valid @ModelAttribute TransacaoQueryDTO queryDTO
+    ) {
 
         administradorService.validarCodigoAcesso(queryDTO.getCodigoAcesso());
 
