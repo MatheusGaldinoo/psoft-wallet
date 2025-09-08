@@ -4,6 +4,7 @@ import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoQueryDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
+import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
 import com.ufcg.psoft.commerce.services.transacao.TransacaoService;
 import com.ufcg.psoft.commerce.services.transacao.TransacaoServiceImpl;
 import jakarta.validation.Valid;
@@ -26,12 +27,20 @@ public class TransacaoController {
     @Autowired
     private TransacaoService transacaoService;
 
+    @Autowired
+    private AdministradorService administradorService;
+
     // US19 - Admin lista todos as operações do sistema (com filtros)
-    @GetMapping()
+    @GetMapping("")
     public ResponseEntity<List<TransacaoResponseDTO>> listarTransacoes(
             @Valid @ModelAttribute TransacaoQueryDTO queryDTO) {
+
+        administradorService.validarCodigoAcesso(queryDTO.getCodigoAcesso());
+
         return ResponseEntity.ok(
                 transacaoService.listarTransacoes(queryDTO)
         );
     }
+
+
 }

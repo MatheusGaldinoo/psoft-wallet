@@ -7,6 +7,7 @@ import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
 import com.ufcg.psoft.commerce.enums.EstadoCompra;
+import com.ufcg.psoft.commerce.enums.EstadoResgate;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.exceptions.*;
 import com.ufcg.psoft.commerce.interfaces.transacao.TransacaoStrategy;
@@ -26,6 +27,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class CompraServiceImpl implements CompraService, TransacaoStrategy {
@@ -157,8 +159,10 @@ public class CompraServiceImpl implements CompraService, TransacaoStrategy {
     }
 
     @Override
-    public List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, LocalDateTime dataInicio, LocalDateTime dataFim){
-        List<Compra> compras = compraRepository.findAllCompras(clienteId, tipoAtivo, dataInicio, dataFim);
+    public List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, String statusCompra, String statusResgate, LocalDateTime dataInicio, LocalDateTime dataFim){
+
+        EstadoCompra estadoCompra = statusCompra == null ? null : EstadoCompra.valueOf(statusCompra.toUpperCase());
+        List<Compra> compras = compraRepository.findAllCompras(clienteId, tipoAtivo, statusCompra, dataInicio, dataFim);
         return compras.stream()
                 .map(compra -> {
                     CompraResponseDTO compraDTO = modelMapper.map(compra, CompraResponseDTO.class);

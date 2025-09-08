@@ -9,6 +9,6 @@ import java.util.List;
 
 public interface TransacaoStrategy {
 
-    List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, LocalDateTime dataInicio, LocalDateTime dataFim);
+    List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, String statusCompra, String statusResgate, LocalDateTime dataInicio, LocalDateTime dataFim);
 
 }

@@ -23,5 +23,5 @@ public interface CompraService {
 
     List<CompraResponseDTO> listarComprasDoCliente(Long idCliente);
 
-    List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, LocalDateTime dataInicio, LocalDateTime dataFim);
+    List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, String statusCompra, String statusResgate, LocalDateTime dataInicio, LocalDateTime dataFim);
 }

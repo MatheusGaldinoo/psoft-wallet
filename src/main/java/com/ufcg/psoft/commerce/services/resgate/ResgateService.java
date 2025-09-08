@@ -29,7 +29,7 @@ public interface ResgateService {
 
     ResgateResponseDTO atualizarStatusResgate(Long idResgate, AtualizarStatusResgateDTO dto);
 
-    List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, LocalDateTime dataInicio, LocalDateTime dataFim);
+    List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, String statusCompra, String statusResgate, LocalDateTime dataInicio, LocalDateTime dataFim);
 
     Resgate buscarPorId(Long idResgate);
 }

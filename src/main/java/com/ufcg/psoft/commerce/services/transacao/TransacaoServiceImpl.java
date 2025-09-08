@@ -36,15 +36,20 @@ public class TransacaoServiceImpl implements TransacaoService{
 
     @Override
     public List<TransacaoResponseDTO> listarTransacoes(TransacaoQueryDTO transacaoQueryDTO){
-        administradorService.validarCodigoAcesso(transacaoQueryDTO.getCodigoAcesso());
 
         LocalDateTime dataInicio = (transacaoQueryDTO.getData() != null) ? transacaoQueryDTO.getData().atStartOfDay() : null;
         LocalDateTime dataFim = (transacaoQueryDTO.getData() != null) ? transacaoQueryDTO.getData().plusDays(1).atStartOfDay() : null;
 
         if (transacaoQueryDTO.getTipoOperacao() == null) {
             return strategies.values().stream()
-                    .flatMap(s -> s.listarAllItens(transacaoQueryDTO.getClienteId(), transacaoQueryDTO.getTipoAtivo(), dataInicio, dataFim).stream())
-                    .collect(Collectors.toList());
+                    .flatMap(s -> s.listarAllItens(
+                            transacaoQueryDTO.getClienteId(),
+                            transacaoQueryDTO.getTipoAtivo(),
+                            transacaoQueryDTO.getStatusCompra(),
+                            transacaoQueryDTO.getStatusResgate(),
+                            dataInicio,
+                            dataFim)
+                    .stream()).collect(Collectors.toList());
         }
 
         TransacaoStrategy strategy = strategies.get(transacaoQueryDTO.getTipoOperacao().toUpperCase());
@@ -52,7 +57,13 @@ public class TransacaoServiceImpl implements TransacaoService{
             throw new IllegalArgumentException("Operação não suportada: " + transacaoQueryDTO.getTipoOperacao());
         }
 
-        return strategy.listarAllItens(transacaoQueryDTO.getClienteId(), transacaoQueryDTO.getTipoAtivo(), dataInicio, dataFim);
+        return strategy.listarAllItens(
+                transacaoQueryDTO.getClienteId(),
+                transacaoQueryDTO.getTipoAtivo(),
+                transacaoQueryDTO.getStatusCompra(),
+                transacaoQueryDTO.getStatusResgate(),
+                dataInicio,
+                dataFim
+        );
     }
-
 }
