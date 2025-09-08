@@ -157,7 +157,9 @@ public class ResgateServiceImpl implements ResgateService, TransacaoStrategy {
     // Todos atributos aqui são filtros da última US
     @Override
     public List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, String statusCompra, String statusResgate, LocalDateTime dataInicio, LocalDateTime dataFim) {
-        List<Resgate> resgates = resgateRepository.findAllResgates(clienteId, tipoAtivo, EstadoResgate.valueOf(statusResgate), dataInicio, dataFim);
+
+        EstadoResgate estadoResgate = statusResgate == null ? null : EstadoResgate.valueOf(statusResgate.toUpperCase());
+        List<Resgate> resgates = resgateRepository.findAllResgates(clienteId, tipoAtivo, estadoResgate, dataInicio, dataFim);
         return resgates.stream()
                 .map(resgate -> {
                     ResgateResponseDTO resgateDTO = modelMapper.map(resgate, ResgateResponseDTO.class);

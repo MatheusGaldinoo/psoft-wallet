@@ -23,5 +23,5 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
             "(c.dataSolicitacao BETWEEN :dataInicio AND :dataFim) OR " +
             "(c.dataFinalizacao BETWEEN :dataInicio AND :dataFim)) "+
             "ORDER BY c.dataSolicitacao DESC")
-    List<Compra> findAllCompras(Long clienteId, TipoAtivo tipoAtivo, EstadoCompra statusCompra, LocalDateTime dataInicio, LocalDateTime dataFim);
+    List<Compra> findAllCompras(Long clienteId, TipoAtivo tipoAtivo, String statusCompra, LocalDateTime dataInicio, LocalDateTime dataFim);
 }

@@ -82,7 +82,8 @@ public class ClienteController {
     @GetMapping("/{id}/transacoes")
     public ResponseEntity<List<TransacaoResponseDTO>> getTransacoes(
             @PathVariable Long id,
-            @RequestBody @Valid TransacaoQueryDTO dto ){
+            @ModelAttribute @Valid TransacaoQueryDTO dto ){
+
         // garante que a busca seja apenas do cliente
         dto.setClienteId(id);
         return ResponseEntity.ok(transacaoService.listarTransacoes(dto));

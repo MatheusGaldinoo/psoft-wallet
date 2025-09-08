@@ -33,7 +33,6 @@ public class TransacaoServiceImpl implements TransacaoService{
 
     @Override
     public List<TransacaoResponseDTO> listarTransacoes(TransacaoQueryDTO transacaoQueryDTO){
-        administradorService.validarCodigoAcesso(transacaoQueryDTO.getCodigoAcesso());
 
         LocalDateTime dataInicio = (transacaoQueryDTO.getData() != null) ? transacaoQueryDTO.getData().atStartOfDay() : null;
         LocalDateTime dataFim = (transacaoQueryDTO.getData() != null) ? transacaoQueryDTO.getData().plusDays(1).atStartOfDay() : null;

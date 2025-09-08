@@ -27,6 +27,7 @@ import org.springframework.stereotype.Service;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class CompraServiceImpl implements CompraService, TransacaoStrategy {
@@ -158,7 +159,9 @@ public class CompraServiceImpl implements CompraService, TransacaoStrategy {
 
     @Override
     public List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, String statusCompra, String statusResgate, LocalDateTime dataInicio, LocalDateTime dataFim){
-        List<Compra> compras = compraRepository.findAllCompras(clienteId, tipoAtivo, EstadoCompra.valueOf(statusCompra), dataInicio, dataFim);
+
+        EstadoCompra estadoCompra = statusCompra == null ? null : EstadoCompra.valueOf(statusCompra.toUpperCase());
+        List<Compra> compras = compraRepository.findAllCompras(clienteId, tipoAtivo, statusCompra, dataInicio, dataFim);
         return compras.stream()
                 .map(compra -> {
                     CompraResponseDTO compraDTO = modelMapper.map(compra, CompraResponseDTO.class);
