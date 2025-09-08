@@ -27,7 +27,7 @@ public class TransacaoController {
     private TransacaoService transacaoService;
 
     // US19 - Admin lista todos as operações do sistema (com filtros)
-    @GetMapping("/listar")
+    @GetMapping()
     public ResponseEntity<List<TransacaoResponseDTO>> listarTransacoes(
             @Valid @ModelAttribute TransacaoQueryDTO queryDTO) {
         return ResponseEntity.ok(

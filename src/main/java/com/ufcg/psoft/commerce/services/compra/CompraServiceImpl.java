@@ -78,6 +78,7 @@ public class CompraServiceImpl implements CompraService, TransacaoStrategy {
                 .precoUnitario(precoUnitario)
                 .valorTotal(custoTotalCompra)
                 .dataSolicitacao(LocalDateTime.now())
+                .tipoAtivo(ativo.getTipo())
                 .build();
 
         compraRepository.save(compra);

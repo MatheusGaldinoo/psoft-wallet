@@ -69,6 +69,7 @@ public class ResgateServiceImpl implements ResgateService, TransacaoStrategy {
                 .imposto(imposto)
                 .valorTotal(ativo.getValor() * dto.getQuantidade())
                 .dataSolicitacao(LocalDateTime.now())
+                .tipoAtivo(ativo.getTipo())
                 .build();
 
         resgateRepository.save(resgate);

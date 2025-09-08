@@ -1,5 +1,6 @@
 package com.ufcg.psoft.commerce.repositories;
 
+import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.models.transacao.Compra;
 import com.ufcg.psoft.commerce.models.transacao.Resgate;
@@ -15,7 +16,7 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
 
     @Query("SELECT c FROM Compra c " +
             "WHERE (:clienteId IS NULL OR c.idCliente = :clienteId) " +
-            "AND (:tipoAtivo IS NULL OR c.tipoAtivo= :tipoAtivo) " +
+            "AND (:tipoAtivo IS NULL OR c.tipoAtivo = :tipoAtivo) " +
             "AND (:dataInicio IS NULL OR " +
             "(c.dataSolicitacao BETWEEN :dataInicio AND :dataFim) OR " +
             "(c.dataFinalizacao BETWEEN :dataInicio AND :dataFim)) "+
