@@ -86,4 +86,11 @@ public class ErrorHandlingControllerAdvice {
     public CustomErrorType onCodigoDeAcessoInvalido(CodigoDeAcessoInvalidoException e) {
         return defaultCustomErrorTypeConstruct(e.getMessage());
     }
+
+    @ExceptionHandler(QuantidadeInsuficienteException.class)
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    @ResponseBody
+    public CustomErrorType onQuantidadeInsuficienteException(QuantidadeInsuficienteException e) {
+        return defaultCustomErrorTypeConstruct(e.getMessage());
+    }
 }

@@ -3,6 +3,7 @@ package com.ufcg.psoft.commerce.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
+import com.ufcg.psoft.commerce.dtos.ativo.AtivoCotacaoRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.AtualizarStatusResgateDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
@@ -27,6 +28,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 
 import org.springframework.test.web.servlet.MockMvc;
+
+import static org.hamcrest.Matchers.containsString;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -39,9 +43,6 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 @SpringBootTest
 @AutoConfigureMockMvc
@@ -350,4 +351,133 @@ public class ResgateControllerTests {
             assertEquals(resgate.getIdAtivo(), resgateConsultado.getIdAtivo());
         }
     }
+
+    @Nested
+    @DisplayName("GET /clientes/{idCliente}/resgate - Cliente solicita resgate")
+    class SolicitarResgate {
+
+        @Test
+        @DisplayName("Cliente solicita resgate com sucesso")
+        void clienteSolicitaResgateComSucesso() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            Long idClienteValido = cliente.getId();
+            Long idAtivoValido = ativo.getId();
+
+            double quantidadeValida = 5;
+
+            inicializarCarteiraComAtivo(cliente, ativo, quantidadeValida);
+
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(idAtivoValido)
+                    .quantidade(quantidadeValida)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            String jsonResponse = driver.perform(post("/clientes/" + idClienteValido + "/resgate")
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isCreated())
+                    .andDo(print())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            ResgateResponseDTO resgateResponseDTO = objectMapper.readValue(jsonResponse, ResgateResponseDTO.class);
+
+            assertAll(
+                    () -> assertEquals(idClienteValido, resgateResponseDTO.getIdCliente()),
+                    () -> assertEquals(idAtivoValido, resgateResponseDTO.getIdAtivo()),
+                    () -> assertEquals(quantidadeValida, resgateResponseDTO.getQuantidade())
+            );
+        }
+
+        @Test
+        @DisplayName("Exceção caso o cliente não seja encontrado")
+        void clienteNaoEncontrado() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            Long idClienteInexistente = 999999L;
+            Long idAtivoValido = ativo.getId();
+
+            double quantidadeValida = 5;
+
+            inicializarCarteiraComAtivo(cliente, ativo, quantidadeValida);
+
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(idAtivoValido)
+                    .quantidade(quantidadeValida)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            driver.perform(post("/clientes/" + idClienteInexistente + "/resgate")
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("O cliente consultado nao existe!")));
+        }
+
+        @Test
+        @DisplayName("Exceção caso o ativo não seja encontrado")
+        void ativoNaoEncontrado() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            Long idClienteValido = cliente.getId();
+            Long idAtivoInexistente = 999999L;
+
+            double quantidadeValida = 5;
+
+            inicializarCarteiraComAtivo(cliente, ativo, quantidadeValida);
+
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(idAtivoInexistente)
+                    .quantidade(quantidadeValida)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            driver.perform(post("/clientes/" + idClienteValido + "/resgate")
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
+        }
+
+        @Test
+        @DisplayName("Exceção caso o balanco (saldo) para resgate seja insuficiente")
+        void balancoAtualMenorQueResgateSolicitado() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            Long idClienteValido = cliente.getId();
+            Long idAtivoValido = ativo.getId();
+
+            double quantidadeValida = 5;
+            double quantidadeInvalida = quantidadeValida + 1;
+
+            inicializarCarteiraComAtivo(cliente, ativo, quantidadeValida);
+
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(idAtivoValido)
+                    .quantidade(quantidadeInvalida)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            driver.perform(post("/clientes/" + idClienteValido + "/resgate")
+                            .content(jsonRequest)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isUnprocessableEntity())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Quantidade do ativo insuficiente para o resgate!")));
+            }
+
+        }
 }
