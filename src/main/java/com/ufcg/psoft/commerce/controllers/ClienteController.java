@@ -1,9 +1,13 @@
 package com.ufcg.psoft.commerce.controllers;
 
+import com.electronwill.nightconfig.core.conversion.Path;
 import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClientePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
+import com.ufcg.psoft.commerce.dtos.transacao.TransacaoQueryDTO;
+import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
 import com.ufcg.psoft.commerce.services.cliente.ClienteService;
+import com.ufcg.psoft.commerce.services.transacao.TransacaoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -22,6 +26,9 @@ public class ClienteController {
 
     @Autowired
     ClienteService clienteService;
+
+    @Autowired
+    TransacaoService transacaoService;
 
     @GetMapping("/{id}")
     public ResponseEntity<ClienteResponseDTO> recuperarCliente(
@@ -70,5 +77,14 @@ public class ClienteController {
         return ResponseEntity
                 .status(HttpStatus.NO_CONTENT)
                 .build();
+    }
+
+    @GetMapping("/{id}/transacoes")
+    public ResponseEntity<List<TransacaoResponseDTO>> getTransacoes(
+            @PathVariable Long id,
+            @RequestBody @Valid TransacaoQueryDTO dto ){
+        // garante que a busca seja apenas do cliente
+        dto.setClienteId(id);
+        return ResponseEntity.ok(transacaoService.listarTransacoes(dto));
     }
 }

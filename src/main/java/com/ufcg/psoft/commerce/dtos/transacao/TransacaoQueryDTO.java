@@ -18,6 +18,10 @@ public class TransacaoQueryDTO {
 
     private String tipoOperacao;
 
+    private String statusCompra;
+
+    private String statusResgate;
+
     @NotBlank(message = "Código de acesso é obrigatório")
     private String codigoAcesso;
 

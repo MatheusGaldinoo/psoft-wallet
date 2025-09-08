@@ -7,6 +7,7 @@ import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
 import com.ufcg.psoft.commerce.enums.DecisaoAdministrador;
+import com.ufcg.psoft.commerce.enums.EstadoCompra;
 import com.ufcg.psoft.commerce.enums.EstadoResgate;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.exceptions.*;
@@ -155,8 +156,8 @@ public class ResgateServiceImpl implements ResgateService, TransacaoStrategy {
 
     // Todos atributos aqui são filtros da última US
     @Override
-    public List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, LocalDateTime dataInicio, LocalDateTime dataFim) {
-        List<Resgate> resgates = resgateRepository.findAllResgates(clienteId, tipoAtivo, dataInicio, dataFim);
+    public List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, String statusCompra, String statusResgate, LocalDateTime dataInicio, LocalDateTime dataFim) {
+        List<Resgate> resgates = resgateRepository.findAllResgates(clienteId, tipoAtivo, EstadoResgate.valueOf(statusResgate), dataInicio, dataFim);
         return resgates.stream()
                 .map(resgate -> {
                     ResgateResponseDTO resgateDTO = modelMapper.map(resgate, ResgateResponseDTO.class);
