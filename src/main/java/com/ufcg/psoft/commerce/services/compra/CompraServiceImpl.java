@@ -162,7 +162,7 @@ public class CompraServiceImpl implements CompraService, TransacaoStrategy {
     public List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, String statusCompra, String statusResgate, LocalDateTime dataInicio, LocalDateTime dataFim){
 
         EstadoCompra estadoCompra = statusCompra == null ? null : EstadoCompra.valueOf(statusCompra.toUpperCase());
-        List<Compra> compras = compraRepository.findAllCompras(clienteId, tipoAtivo, statusCompra, dataInicio, dataFim);
+        List<Compra> compras = compraRepository.findAllCompras(clienteId, tipoAtivo, estadoCompra, dataInicio, dataFim);
         return compras.stream()
                 .map(compra -> {
                     CompraResponseDTO compraDTO = modelMapper.map(compra, CompraResponseDTO.class);
