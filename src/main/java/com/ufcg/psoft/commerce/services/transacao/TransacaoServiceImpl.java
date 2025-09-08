@@ -1,8 +1,11 @@
 package com.ufcg.psoft.commerce.services.transacao;
 
+import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoQueryDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
+import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.interfaces.transacao.TransacaoStrategy;
+import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
 import com.ufcg.psoft.commerce.services.compra.CompraServiceImpl;
 import com.ufcg.psoft.commerce.services.resgate.ResgateServiceImpl;
