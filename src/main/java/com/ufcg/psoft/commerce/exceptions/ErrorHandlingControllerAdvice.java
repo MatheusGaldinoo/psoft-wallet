@@ -93,4 +93,34 @@ public class ErrorHandlingControllerAdvice {
     public CustomErrorType onQuantidadeInsuficienteException(QuantidadeInsuficienteException e) {
         return defaultCustomErrorTypeConstruct(e.getMessage());
     }
+
+    @ExceptionHandler(ResgateNaoEncontradoException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public CustomErrorType onResgateNaoEncontradoException(ResgateNaoEncontradoException e) {
+        return defaultCustomErrorTypeConstruct(e.getMessage());
+    }
+
+    @ExceptionHandler(ResgateNaoPendenteException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public CustomErrorType onResgateNaoPendenteException(ResgateNaoPendenteException e) {
+        return defaultCustomErrorTypeConstruct(e.getMessage());
+    }
+
+// TODO: descomentar essas linhas e mudar os códgidos http dos testes
+
+//    @ExceptionHandler(ClienteNaoExisteException.class)
+//    @ResponseStatus(HttpStatus.NOT_FOUND)
+//    @ResponseBody
+//    public CustomErrorType onClienteNaoExisteException(ClienteNaoExisteException e) {
+//        return defaultCustomErrorTypeConstruct(e.getMessage());
+//    }
+//
+//    @ExceptionHandler(AtivoNaoExisteException.class)
+//    @ResponseStatus(HttpStatus.NOT_FOUND)
+//    @ResponseBody
+//    public CustomErrorType onAtivoNaoExisteException(AtivoNaoExisteException e) {
+//        return defaultCustomErrorTypeConstruct(e.getMessage());
+//    }
 }
