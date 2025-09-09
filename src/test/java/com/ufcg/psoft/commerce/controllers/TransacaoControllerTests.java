@@ -16,6 +16,7 @@ import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.models.ativo.tipo.Acao;
 import com.ufcg.psoft.commerce.models.ativo.tipo.CriptoMoeda;
 import com.ufcg.psoft.commerce.models.ativo.tipo.TesouroDireto;
+import com.ufcg.psoft.commerce.models.carteira.AtivoCarteira;
 import com.ufcg.psoft.commerce.models.carteira.Carteira;
 import com.ufcg.psoft.commerce.models.transacao.Compra;
 import com.ufcg.psoft.commerce.models.transacao.Resgate;
@@ -33,6 +34,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
@@ -242,6 +244,21 @@ public class TransacaoControllerTests {
                 .statusDisponibilidade(ativo.getStatusDisponibilidade())
                 .build();
         ativosPostPutRequestDTO.add(dto);
+    }
+
+    private void inicializarCarteiraComAtivo(Cliente cliente, Ativo ativo, double quantidade) {
+        if (cliente.getCarteira().getAtivos() == null) {
+            cliente.getCarteira().setAtivos(new HashMap<>());
+        }
+
+        AtivoCarteira ativoCarteira = AtivoCarteira.builder()
+                .quantidade(quantidade)
+                .valorAcumulado(ativo.getValor())
+                .quantidadeAcumulada(quantidade)
+                .build();
+
+        cliente.getCarteira().getAtivos().put(ativo.getId(), ativoCarteira);
+        clienteRepository.save(cliente);
     }
 
     @AfterEach
