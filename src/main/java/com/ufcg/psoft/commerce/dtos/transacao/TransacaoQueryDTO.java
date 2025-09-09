@@ -2,13 +2,19 @@ package com.ufcg.psoft.commerce.dtos.transacao;
 
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import jakarta.validation.constraints.NotBlank;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 @Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class TransacaoQueryDTO {
 
     private Long clienteId;
