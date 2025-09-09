@@ -42,48 +42,39 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
 @AutoConfigureMockMvc
 @DisplayName("Testes do controlador de Transações")
 public class TransacaoControllerTests {
 
-    final String URI_COMPRAS_CLIENTES = "/clientes";
-    final String URI_TRANSACOES = "/transacoes";
-    final String URI_COMPRAS = "/compras";
-    final String CODIGO_ACESSO_VALIDO = "123456";
-    final String CODIGO_ACESSO_INVALIDO = "000000";
+    // Constantes
+    private static final String URI_COMPRAS_CLIENTES = "/clientes";
+    private static final String URI_TRANSACOES = "/transacoes";
+    private static final String URI_COMPRAS = "/compras";
+    private static final String URI_RESGATE = "/resgate";
+    private static final String URI_EXTRATO = "/extrato";
+    private static final String CODIGO_ACESSO_VALIDO = "123456";
+    private static final String CODIGO_ACESSO_INVALIDO = "000000";
+    private static final String ENDERECO_PADRAO = "Avenida Paris, 5987, Campina Grande - PB";
+    private static final double BALANCO_INICIAL = 200.00;
+    private static final double IMPOSTO_PADRAO = 10.0;
+    private static final int QUANTIDADE_PADRAO = 1;
+    private static final String CABECALHO_CSV = "Tipo,Ativo,Quantidade,Imposto,Valor,DataSolicitacao,DataFinalizacao";
 
-    @Autowired
-    MockMvc driver;
-
-    @Autowired
-    AtivoRepository ativoRepository;
-
-    @Autowired
-    ClienteRepository clienteRepository;
-
-    @Autowired
-    TipoDeAtivoRepository tipoDeAtivoRepository;
-
-    @Autowired
-    AdministradorRepository administradorRepository;
-
-    @Autowired
-    CompraRepository compraRepository;
-
-    @Autowired
-    ResgateRepository resgateRepository;
-
-    @Autowired
-    ModelMapper modelMapper;
+    @Autowired MockMvc driver;
+    @Autowired AtivoRepository ativoRepository;
+    @Autowired ClienteRepository clienteRepository;
+    @Autowired TipoDeAtivoRepository tipoDeAtivoRepository;
+    @Autowired AdministradorRepository administradorRepository;
+    @Autowired CompraRepository compraRepository;
+    @Autowired ResgateRepository resgateRepository;
+    @Autowired ModelMapper modelMapper;
 
     ObjectMapper objectMapper = new ObjectMapper();
 
     List<Compra> compras;
     List<Resgate> resgates;
-
     List<Ativo> ativos;
     List<Cliente> clientes;
     List<AtivoPostPutRequestDTO> ativosPostPutRequestDTO;
@@ -94,32 +85,51 @@ public class TransacaoControllerTests {
 
     @BeforeEach
     void setup() {
-        // limpa o banco
+        limparBancoDados();
+        inicializarColecoes();
+        criarAdministrador();
+        criarTiposDeAtivo();
+        criarAtivosEClientes();
+    }
+
+    @AfterEach
+    void tearDown() {
+        limparBancoDados();
+    }
+
+    // Métodos de configuração
+    private void limparBancoDados() {
         resgateRepository.deleteAll();
         compraRepository.deleteAll();
         ativoRepository.deleteAll();
         tipoDeAtivoRepository.deleteAll();
         clienteRepository.deleteAll();
         administradorRepository.deleteAll();
+    }
 
+    private void inicializarColecoes() {
         ativos = new ArrayList<>();
         clientes = new ArrayList<>();
         ativosPostPutRequestDTO = new ArrayList<>();
-        objectMapper.registerModule(new JavaTimeModule());
-
         compras = new ArrayList<>();
         resgates = new ArrayList<>();
+        objectMapper.registerModule(new JavaTimeModule());
+    }
 
+    private void criarAdministrador() {
         administradorRepository.save(Administrador.builder()
                 .nome("Admin")
-                .codigoAcesso("123456")
+                .codigoAcesso(CODIGO_ACESSO_VALIDO)
                 .build());
+    }
 
-
+    private void criarTiposDeAtivo() {
         tesouro = tipoDeAtivoRepository.save(new TesouroDireto());
         cripto = tipoDeAtivoRepository.save(new CriptoMoeda());
         acao = tipoDeAtivoRepository.save(new Acao());
+    }
 
+    private void criarAtivosEClientes() {
         for (int i = 1; i <= 3; i++) {
             criarAtivo("Ativo" + i, tesouro, 1.0 * i, StatusDisponibilidade.DISPONIVEL);
             criarCliente("Cliente" + i, (i % 2 == 0 ? TipoPlano.NORMAL : TipoPlano.PREMIUM));
@@ -132,91 +142,18 @@ public class TransacaoControllerTests {
             criarAtivo("Ativo" + i, acao, 1.0 * i, StatusDisponibilidade.DISPONIVEL);
             criarCliente("Cliente" + i, (i % 2 == 0 ? TipoPlano.NORMAL : TipoPlano.PREMIUM));
         }
-
-    }
-
-    // cria e salva exemplos de compras e resgates
-    private void criarTransacoes() {
-        for (int i = 0; i <= 9; i++) {
-            Compra compra = Compra.builder()
-                    .idCliente(clientes.get(i).getId())
-                    .idAtivo(ativos.get(i).getId())
-                    .quantidade(i + 1.0)
-                    .precoUnitario(100.0 * (i + 1))
-                    .tipoAtivo(ativos.get(i).getTipo().getNomeTipo())
-                    .valorTotal((i + 1.0) * 100.0 * (i + 1))
-                    .dataSolicitacao(LocalDateTime.of(2025, 9, 8, 1 + i, 0))
-                    .dataFinalizacao(LocalDateTime.of(2025, 9, 8, 13 + i, 0))
-                    .build();
-
-            compras.add(compraRepository.save(compra));
-
-            Resgate resgate = Resgate.builder()
-                    .idCliente(clientes.get(i).getId())
-                    .idAtivo(ativos.get(i).getId())
-                    .quantidade((i + 1) * 2.0)
-                    .precoUnitario(100.0 * (i + 1))
-                    .tipoAtivo(ativos.get(i).getTipo().getNomeTipo())
-                    .valorTotal((i + 1) * 200.0)
-                    .dataSolicitacao(LocalDateTime.of(2025, 9, 8, 1 + i, 0))
-                    .dataFinalizacao(LocalDateTime.of(2025, 9, 8, 13 + i, 0))
-                    .imposto(10.0)
-                    .build();
-
-            resgates.add(resgateRepository.save(resgate));
-        }
-    }
-
-    private List<TransacaoResponseDTO> mapTransacoesEsperadas(List<Compra> compras, List<Resgate> resgates) {
-        List<TransacaoResponseDTO> todasTransacoes = new ArrayList<>();
-
-        // Mapeia compras
-        for (Compra c : compras) {
-            todasTransacoes.add(
-                    TransacaoResponseDTO.builder()
-                            .compra(modelMapper.map(c, CompraResponseDTO.class))
-                            .build()
-            );
-        }
-
-        // Mapeia resgates
-        for (Resgate r : resgates) {
-            todasTransacoes.add(
-                    TransacaoResponseDTO.builder()
-                            .resgate(modelMapper.map(r, ResgateResponseDTO.class))
-                            .build()
-            );
-        }
-
-        // Ordena: primeiro resgates DESC por data, depois compras DESC por data
-        todasTransacoes.sort((t1, t2) -> {
-            // Checa se cada transação é resgate ou compra
-            boolean t1Resgate = t1.getResgate() != null;
-            boolean t2Resgate = t2.getResgate() != null;
-
-            if (t1Resgate && !t2Resgate) return -1; // resgates antes
-            if (!t1Resgate && t2Resgate) return 1;  // compras depois
-
-            // Se ambos são do mesmo tipo, ordena por dataSolicitacao DESC
-            LocalDateTime dt1 = t1Resgate ? t1.getResgate().getDataSolicitacao() : t1.getCompra().getDataSolicitacao();
-            LocalDateTime dt2 = t2Resgate ? t2.getResgate().getDataSolicitacao() : t2.getCompra().getDataSolicitacao();
-
-            return dt2.compareTo(dt1); // DESC
-        });
-
-        return todasTransacoes;
     }
 
     private void criarCliente(String nome, TipoPlano tipo) {
         Carteira carteira = Carteira.builder()
-                .balanco(200.00)
+                .balanco(BALANCO_INICIAL)
                 .build();
 
         Cliente cliente = clienteRepository.save(
                 Cliente.builder()
                         .nome(nome)
-                        .endereco("Avenida Paris, 5987, Campina Grande - PB")
-                        .codigoAcesso("123456")
+                        .endereco(ENDERECO_PADRAO)
+                        .codigoAcesso(CODIGO_ACESSO_VALIDO)
                         .plano(tipo)
                         .carteira(carteira)
                         .build());
@@ -261,331 +198,277 @@ public class TransacaoControllerTests {
         clienteRepository.save(cliente);
     }
 
-    @AfterEach
-    void tearDown() {
-        ativoRepository.deleteAll();
-        tipoDeAtivoRepository.deleteAll();
-        administradorRepository.deleteAll();
-        compraRepository.deleteAll();
-        resgateRepository.deleteAll();
-        clienteRepository.deleteAll();
+    // Métodos auxiliares para transações
+    private void criarTransacoes() {
+        for (int i = 0; i <= 9; i++) {
+            Compra compra = Compra.builder()
+                    .idCliente(clientes.get(i).getId())
+                    .idAtivo(ativos.get(i).getId())
+                    .quantidade(i + 1.0)
+                    .precoUnitario(100.0 * (i + 1))
+                    .tipoAtivo(ativos.get(i).getTipo().getNomeTipo())
+                    .valorTotal((i + 1.0) * 100.0 * (i + 1))
+                    .dataSolicitacao(LocalDateTime.of(2025, 9, 8, 1 + i, 0))
+                    .dataFinalizacao(LocalDateTime.of(2025, 9, 8, 13 + i, 0))
+                    .build();
+
+            compras.add(compraRepository.save(compra));
+
+            Resgate resgate = Resgate.builder()
+                    .idCliente(clientes.get(i).getId())
+                    .idAtivo(ativos.get(i).getId())
+                    .quantidade((i + 1) * 2.0)
+                    .precoUnitario(100.0 * (i + 1))
+                    .tipoAtivo(ativos.get(i).getTipo().getNomeTipo())
+                    .valorTotal((i + 1) * 200.0)
+                    .dataSolicitacao(LocalDateTime.of(2025, 9, 8, 1 + i, 0))
+                    .dataFinalizacao(LocalDateTime.of(2025, 9, 8, 13 + i, 0))
+                    .imposto(IMPOSTO_PADRAO)
+                    .build();
+
+            resgates.add(resgateRepository.save(resgate));
+        }
+    }
+
+    private List<TransacaoResponseDTO> mapTransacoesEsperadas(List<Compra> compras, List<Resgate> resgates) {
+        List<TransacaoResponseDTO> todasTransacoes = new ArrayList<>();
+
+        // Mapeia compras
+        for (Compra c : compras) {
+            todasTransacoes.add(
+                    TransacaoResponseDTO.builder()
+                            .compra(modelMapper.map(c, CompraResponseDTO.class))
+                            .build()
+            );
+        }
+
+        // Mapeia resgates
+        for (Resgate r : resgates) {
+            todasTransacoes.add(
+                    TransacaoResponseDTO.builder()
+                            .resgate(modelMapper.map(r, ResgateResponseDTO.class))
+                            .build()
+            );
+        }
+
+        // Ordena: primeiro resgates DESC por data, depois compras DESC por data
+        todasTransacoes.sort((t1, t2) -> {
+            boolean t1Resgate = t1.getResgate() != null;
+            boolean t2Resgate = t2.getResgate() != null;
+
+            if (t1Resgate && !t2Resgate) return -1;
+            if (!t1Resgate && t2Resgate) return 1;
+
+            LocalDateTime dt1 = t1Resgate ? t1.getResgate().getDataSolicitacao() : t1.getCompra().getDataSolicitacao();
+            LocalDateTime dt2 = t2Resgate ? t2.getResgate().getDataSolicitacao() : t2.getCompra().getDataSolicitacao();
+
+            return dt2.compareTo(dt1);
+        });
+
+        return todasTransacoes;
+    }
+
+    // Métodos auxiliares para operações HTTP
+    private CompraResponseDTO criarCompra(Cliente cliente, Ativo ativo, int quantidade) throws Exception {
+        CompraPostPutRequestDTO compraRequest = CompraPostPutRequestDTO.builder()
+                .codigoAcesso(cliente.getCodigoAcesso())
+                .idAtivo(ativo.getId())
+                .quantidade(quantidade)
+                .build();
+
+        String response = driver.perform(
+                        post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(compraRequest)))
+                .andExpect(status().isCreated())
+                .andDo(print())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, CompraResponseDTO.class);
+    }
+
+    private CompraResponseDTO criarCompra(Cliente cliente, Ativo ativo) throws Exception {
+        return criarCompra(cliente, ativo, QUANTIDADE_PADRAO);
+    }
+
+    private void aprovarCompra(Long compraId) throws Exception {
+        driver.perform(
+                        patch(URI_COMPRAS + "/" + compraId + "/aprovar")
+                                .param("codigoAcesso", CODIGO_ACESSO_VALIDO))
+                .andExpect(status().isOk())
+                .andDo(print());
+    }
+
+    private void finalizarCompra(Long clienteId, Long compraId) throws Exception {
+        driver.perform(
+                        patch(URI_COMPRAS_CLIENTES + "/" + clienteId + "/finalizar/" + compraId)
+                                .param("codigoAcesso", CODIGO_ACESSO_VALIDO))
+                .andExpect(status().isOk())
+                .andDo(print());
+    }
+
+    private CompraResponseDTO criarEProcessarCompraCompleta(Cliente cliente, Ativo ativo) throws Exception {
+        CompraResponseDTO compra = criarCompra(cliente, ativo);
+        aprovarCompra(compra.getId());
+        finalizarCompra(cliente.getId(), compra.getId());
+        return compra;
+    }
+
+    private void criarResgate(Cliente cliente, Ativo ativo, int quantidade) throws Exception {
+        ResgatePostPutRequestDTO resgateRequest = ResgatePostPutRequestDTO.builder()
+                .idAtivo(ativo.getId())
+                .quantidade(quantidade)
+                .build();
+
+        driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + URI_RESGATE)
+                        .content(objectMapper.writeValueAsString(resgateRequest))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated())
+                .andDo(print());
+    }
+
+    private void criarResgate(Cliente cliente, Ativo ativo) throws Exception {
+        criarResgate(cliente, ativo, QUANTIDADE_PADRAO);
+    }
+
+    private List<TransacaoResponseDTO> listarTransacoes(Long clienteId) throws Exception {
+        String response = driver.perform(
+                        get(URI_COMPRAS_CLIENTES + "/" + clienteId + "/transacoes")
+                                .param("codigoAcesso", CODIGO_ACESSO_VALIDO))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, new TypeReference<List<TransacaoResponseDTO>>() {});
+    }
+
+    private List<TransacaoResponseDTO> listarTransacoesPorTipo(Long clienteId, String tipoOperacao) throws Exception {
+        String response = driver.perform(
+                        get(URI_COMPRAS_CLIENTES + "/" + clienteId + "/transacoes")
+                                .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                                .param("tipoOperacao", tipoOperacao))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, new TypeReference<List<TransacaoResponseDTO>>() {});
+    }
+
+    private List<TransacaoResponseDTO> listarTransacoesPorStatusETipo(Long clienteId, String statusCompra, String tipoOperacao) throws Exception {
+        String response = driver.perform(
+                        get(URI_COMPRAS_CLIENTES + "/" + clienteId + "/transacoes")
+                                .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                                .param("statusCompra", statusCompra)
+                                .param("tipoOperacao", tipoOperacao))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, new TypeReference<List<TransacaoResponseDTO>>() {});
+    }
+
+    private List<TransacaoResponseDTO> listarTransacoesPorPeriodo(Long clienteId, LocalDateTime dataInicio, LocalDateTime dataFim) throws Exception {
+        String response = driver.perform(
+                        get(URI_COMPRAS_CLIENTES + "/" + clienteId + "/transacoes")
+                                .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                                .param("dataInicio", dataInicio.toString())
+                                .param("dataFim", dataFim.toString()))
+                .andExpect(status().isOk())
+                .andDo(print())
+                .andReturn().getResponse().getContentAsString();
+
+        return objectMapper.readValue(response, new TypeReference<List<TransacaoResponseDTO>>() {});
+    }
+
+    private String exportarExtrato(Long clienteId, String codigoAcesso) throws Exception {
+        return driver.perform(get(URI_COMPRAS_CLIENTES + "/" + clienteId + URI_EXTRATO)
+                        .param("codigoAcesso", codigoAcesso))
+                .andExpect(status().isOk())
+                .andReturn()
+                .getResponse()
+                .getContentAsString();
     }
 
     @Nested
     @DisplayName("Cliente lista suas transações - operações")
     class ClienteListaTransacoes {
+
         @Test
         @DisplayName("Cliente lista todas transações")
         void clienteListaTodasTransacoesTest() throws Exception {
-
+            // Arrange
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
 
-            CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
-                    .codigoAcesso(cliente.getCodigoAcesso())
-                    .idAtivo(ativo.getId())
-                    .quantidade(1)
-                    .build();
+            // Act
+            CompraResponseDTO compraResponse = criarCompra(cliente, ativo);
+            List<TransacaoResponseDTO> transacoes = listarTransacoes(cliente.getId());
 
-            String compraJson = objectMapper.writeValueAsString(compra);
-
-            String compraResponse = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(compraJson))
-                    .andExpect(status().isCreated())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CompraResponseDTO compraResponseDTO = objectMapper.readValue(compraResponse, CompraResponseDTO.class);
-
-            String responseJsonString = driver.perform(
-                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/transacoes")
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            List<TransacaoResponseDTO> transacoesRetornadas = objectMapper.readValue(
-                    responseJsonString,
-                    new TypeReference<List<TransacaoResponseDTO>>() { }
-            );
-
-            assertEquals(1, transacoesRetornadas.size());
-            assertEquals(transacoesRetornadas.get(0).getCompra().getId(), compraResponseDTO.getId());
-
-
+            // Assert
+            assertEquals(1, transacoes.size());
+            assertEquals(compraResponse.getId(), transacoes.get(0).getCompra().getId());
         }
 
         @Test
         @Transactional
         @DisplayName("Cliente lista transações por tipo (COMPRA OU RESGATE)")
         void clienteListaTransacoesPorTipoTest() throws Exception {
-
+            // Arrange
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
 
-            CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
-                    .codigoAcesso(cliente.getCodigoAcesso())
-                    .idAtivo(ativo.getId())
-                    .quantidade(1)
-                    .build();
+            // Act
+            CompraResponseDTO compra1 = criarEProcessarCompraCompleta(cliente, ativo);
+            CompraResponseDTO compra2 = criarCompra(cliente, ativo);
+            criarResgate(cliente, ativo);
 
-            String compraJson = objectMapper.writeValueAsString(compra);
+            List<TransacaoResponseDTO> transacoesCompra = listarTransacoesPorTipo(cliente.getId(), "COMPRA");
 
-            String compraResponse = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(compraJson))
-                    .andExpect(status().isCreated())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(compraResponse, CompraResponseDTO.class);
-
-            driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            driver.perform(
-                            patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraResponseDTOSolicitacao.getId())
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CompraPostPutRequestDTO compra2 = CompraPostPutRequestDTO.builder()
-                    .codigoAcesso(cliente.getCodigoAcesso())
-                    .idAtivo(ativo.getId())
-                    .quantidade(1)
-                    .build();
-
-            String compraJson2 = objectMapper.writeValueAsString(compra);
-
-            String compraResponse2 = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(compraJson2))
-                    .andExpect(status().isCreated())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CompraResponseDTO compraResponseDTOSolicitacao2 = objectMapper.readValue(compraResponse2, CompraResponseDTO.class);
-
-            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
-                    .idAtivo(ativo.getId())
-                    .quantidade(1)
-                    .build();
-
-            String jsonRequest = objectMapper.writeValueAsString(dto);
-
-            driver.perform(post("/clientes/" + cliente.getId() + "/resgate")
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isCreated())
-                    .andDo(print());
-
-            String responseJsonString = driver.perform(
-                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/transacoes")
-                                    .param("codigoAcesso", "123456")
-                                    .param("tipoOperacao", "COMPRA"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-
-            List<TransacaoResponseDTO> transacoesRetornadas = objectMapper.readValue(
-                    responseJsonString,
-                    new TypeReference<List<TransacaoResponseDTO>>() { }
-            );
-
-            assertEquals(2, transacoesRetornadas.size());
-            assertEquals(transacoesRetornadas.get(0).getCompra().getId(), compraResponseDTOSolicitacao2.getId());
-            assertEquals(transacoesRetornadas.get(1).getCompra().getId(), compraResponseDTOSolicitacao.getId());
+            // Assert
+            assertEquals(2, transacoesCompra.size());
+            assertEquals(compra2.getId(), transacoesCompra.get(0).getCompra().getId());
+            assertEquals(compra1.getId(), transacoesCompra.get(1).getCompra().getId());
         }
 
         @Test
         @DisplayName("Cliente lista transações por status (COMPRA - solicitado, disponivel, em_carteira)")
         void clienteListaTransacoesPorStatusCompraTest() throws Exception {
-
+            // Arrange
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
 
-            CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
-                    .codigoAcesso(cliente.getCodigoAcesso())
-                    .idAtivo(ativo.getId())
-                    .quantidade(1)
-                    .build();
+            // Act
+            criarEProcessarCompraCompleta(cliente, ativo);
+            CompraResponseDTO compra2 = criarCompra(cliente, ativo);
+            criarResgate(cliente, ativo);
 
-            String compraJson = objectMapper.writeValueAsString(compra);
+            List<TransacaoResponseDTO> transacoesSolicitadas = listarTransacoesPorStatusETipo(
+                    cliente.getId(), "SOLICITADO", "COMPRA");
 
-            String compraResponse = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(compraJson))
-                    .andExpect(status().isCreated())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(compraResponse, CompraResponseDTO.class);
-
-            driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            driver.perform(
-                            patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraResponseDTOSolicitacao.getId())
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CompraPostPutRequestDTO compra2 = CompraPostPutRequestDTO.builder()
-                    .codigoAcesso(cliente.getCodigoAcesso())
-                    .idAtivo(ativo.getId())
-                    .quantidade(1)
-                    .build();
-
-            String compraJson2 = objectMapper.writeValueAsString(compra);
-
-            String compraResponse2 = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(compraJson2))
-                    .andExpect(status().isCreated())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CompraResponseDTO compraResponseDTOSolicitacao2 = objectMapper.readValue(compraResponse2, CompraResponseDTO.class);
-
-            String responseJsonString = driver.perform(
-                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/transacoes")
-                                    .param("codigoAcesso", "123456")
-                                    .param("statusCompra", "SOLICITADO")
-                                    .param("tipoOperacao", "COMPRA"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
-                    .idAtivo(ativo.getId())
-                    .quantidade(1)
-                    .build();
-
-            String jsonRequest = objectMapper.writeValueAsString(dto);
-
-            driver.perform(post("/clientes/" + cliente.getId() + "/resgate")
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isCreated())
-                    .andDo(print());
-
-            List<TransacaoResponseDTO> transacoesRetornadas = objectMapper.readValue(
-                    responseJsonString,
-                    new TypeReference<List<TransacaoResponseDTO>>() { }
-            );
-
-            assertEquals(1, transacoesRetornadas.size());
-            assertEquals(transacoesRetornadas.get(0).getCompra().getId(), compraResponseDTOSolicitacao2.getId());
+            // Assert
+            assertEquals(1, transacoesSolicitadas.size());
+            assertEquals(compra2.getId(), transacoesSolicitadas.get(0).getCompra().getId());
         }
 
         @Test
         @Transactional
         @DisplayName("Cliente lista transações por periodo")
         void clienteListaTransacoesPorPeriodoCompraTest() throws Exception {
-
+            // Arrange
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
 
-            CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
-                    .codigoAcesso(cliente.getCodigoAcesso())
-                    .idAtivo(ativo.getId())
-                    .quantidade(1)
-                    .build();
+            // Act
+            criarEProcessarCompraCompleta(cliente, ativo);
+            CompraResponseDTO compra2 = criarCompra(cliente, ativo);
+            LocalDateTime dataConsulta = compra2.getDataSolicitacao();
+            criarResgate(cliente, ativo);
 
-            String compraJson = objectMapper.writeValueAsString(compra);
+            List<TransacaoResponseDTO> transacoesPorPeriodo = listarTransacoesPorPeriodo(
+                    cliente.getId(), dataConsulta, dataConsulta);
 
-            String compraResponse = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(compraJson))
-                    .andExpect(status().isCreated())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(compraResponse, CompraResponseDTO.class);
-            LocalDateTime dataSolicitacao = compraResponseDTOSolicitacao.getDataSolicitacao();
-
-            driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            driver.perform(
-                            patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraResponseDTOSolicitacao.getId())
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CompraPostPutRequestDTO compra2 = CompraPostPutRequestDTO.builder()
-                    .codigoAcesso(cliente.getCodigoAcesso())
-                    .idAtivo(ativo.getId())
-                    .quantidade(1)
-                    .build();
-
-            String compraJson2 = objectMapper.writeValueAsString(compra2);
-
-            String compraResponse2 = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
-                                    .contentType(MediaType.APPLICATION_JSON)
-                                    .content(compraJson2))
-                    .andExpect(status().isCreated())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-            CompraResponseDTO compraResponseDTOSolicitacao2 = objectMapper.readValue(compraResponse2, CompraResponseDTO.class);
-            LocalDateTime dataSolicitacao2 = compraResponseDTOSolicitacao2.getDataSolicitacao();
-
-            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
-                    .idAtivo(ativo.getId())
-                    .quantidade(1)
-                    .build();
-
-            String jsonRequest = objectMapper.writeValueAsString(dto);
-
-            driver.perform(post("/clientes/" + cliente.getId() + "/resgate")
-                            .content(jsonRequest)
-                            .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isCreated())
-                    .andDo(print());
-
-            Compra compraAntiga = compraRepository.findById(compraResponseDTOSolicitacao2.getId()).orElse(null);
-
-            String responseJsonString = driver.perform(
-                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/transacoes")
-                                    .param("codigoAcesso", "123456")
-                                    .param("dataInicio", dataSolicitacao2.toString())
-                                    .param("dataFim", dataSolicitacao2.toString()))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
-
-
-            List<TransacaoResponseDTO> transacoesRetornadas = objectMapper.readValue(
-                    responseJsonString,
-                    new TypeReference<List<TransacaoResponseDTO>>() { }
-            );
-
-            assertEquals(0, transacoesRetornadas.size());
+            // Assert
+            assertEquals(0, transacoesPorPeriodo.size());
         }
     }
 
@@ -596,40 +479,16 @@ public class TransacaoControllerTests {
         @Test
         @DisplayName("Cliente exporta extrato com compras e resgates")
         void clienteExportaExtratoComTransacoes() throws Exception {
+            // Arrange
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
 
-            // Criar uma compra
-            CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
-                    .codigoAcesso(cliente.getCodigoAcesso())
-                    .idAtivo(ativo.getId())
-                    .quantidade(2)
-                    .build();
-
-            String compraJson = objectMapper.writeValueAsString(compra);
-
-            driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(compraJson))
-                    .andExpect(status().isCreated());
-
-            // Criar um resgate
+            // Act
+            criarCompra(cliente, ativo, 2);
             inicializarCarteiraComAtivo(cliente, ativo, 5);
+            criarResgate(cliente, ativo);
 
-            ResgatePostPutRequestDTO resgate = ResgatePostPutRequestDTO.builder()
-                    .idAtivo(ativo.getId())
-                    .quantidade(1)
-                    .build();
-
-            String resgateJson = objectMapper.writeValueAsString(resgate);
-
-            driver.perform(post("/clientes/" + cliente.getId() + "/resgate")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(resgateJson))
-                    .andExpect(status().isCreated());
-
-            // Exportar CSV
-            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
+            String csvResponse = driver.perform(get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + URI_EXTRATO)
                             .param("codigoAcesso", cliente.getCodigoAcesso()))
                     .andExpect(status().isOk())
                     .andExpect(header().string("Content-Disposition",
@@ -638,7 +497,8 @@ public class TransacaoControllerTests {
                     .getResponse()
                     .getContentAsString();
 
-            assertTrue(csvResponse.contains("Tipo,Ativo,Quantidade,Imposto,Valor,DataSolicitacao,DataFinalizacao"));
+            // Assert
+            assertTrue(csvResponse.contains(CABECALHO_CSV));
             assertTrue(csvResponse.contains("COMPRA"));
             assertTrue(csvResponse.contains("RESGATE"));
             assertTrue(csvResponse.contains(String.valueOf(ativo.getId())));
@@ -647,25 +507,24 @@ public class TransacaoControllerTests {
         @Test
         @DisplayName("Cliente exporta extrato sem transações")
         void clienteExportaExtratoSemTransacoes() throws Exception {
+            // Arrange
             Cliente cliente = clientes.get(1);
 
-            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
-                    .andExpect(status().isOk())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
+            // Act
+            String csvResponse = exportarExtrato(cliente.getId(), cliente.getCodigoAcesso());
 
-            // Apenas o cabeçalho deve estar presente
-            assertEquals("Tipo,Ativo,Quantidade,Imposto,Valor,DataSolicitacao,DataFinalizacao\n", csvResponse);
+            // Assert
+            assertEquals(CABECALHO_CSV + "\n", csvResponse);
         }
 
         @Test
         @DisplayName("Cliente exporta extrato com código de acesso inválido")
         void clienteExportaExtratoCodigoAcessoInvalido() throws Exception {
+            // Arrange
             Cliente cliente = clientes.get(0);
 
-            driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
+            // Act & Assert
+            driver.perform(get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + URI_EXTRATO)
                             .param("codigoAcesso", CODIGO_ACESSO_INVALIDO))
                     .andExpect(status().is4xxClientError());
         }
@@ -673,60 +532,28 @@ public class TransacaoControllerTests {
         @Test
         @DisplayName("Verifica conteúdo do CSV - valores e impostos")
         void clienteExportaExtratoConteudoCSV() throws Exception {
+            // Arrange
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
 
-            CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
-                    .codigoAcesso(cliente.getCodigoAcesso())
-                    .idAtivo(ativo.getId())
-                    .quantidade(3)
-                    .build();
-
-            String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(compra)))
-                    .andExpect(status().isCreated())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
-            CompraResponseDTO compraDTO = objectMapper.readValue(compraResponse, CompraResponseDTO.class);
-
-            driver.perform(patch("/compras/" + compraDTO.getId() + "/aprovar")
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
-                    .andExpect(status().isOk());
-
-            driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraDTO.getId())
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
-                    .andExpect(status().isOk());
+            // Act
+            CompraResponseDTO compraDTO = criarCompra(cliente, ativo, 3);
+            aprovarCompra(compraDTO.getId());
+            finalizarCompra(cliente.getId(), compraDTO.getId());
 
             inicializarCarteiraComAtivo(cliente, ativo, 5);
+            criarResgate(cliente, ativo, 2);
 
-            ResgatePostPutRequestDTO resgate = ResgatePostPutRequestDTO.builder()
-                    .idAtivo(ativo.getId())
-                    .quantidade(2)
-                    .build();
+            String csvResponse = exportarExtrato(cliente.getId(), cliente.getCodigoAcesso());
 
-            driver.perform(post("/clientes/" + cliente.getId() + "/resgate")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(resgate)))
-                    .andExpect(status().isCreated());
-
-            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
-                    .andExpect(status().isOk())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
-            String[] linhas = csvResponse.split("\\r?\\n"); // Suporta \n ou \r\n
-
+            // Assert
+            String[] linhas = csvResponse.split("\\r?\\n");
             assertEquals(3, linhas.length); // Cabeçalho + 2 transações
 
             boolean hasCompra = false;
             boolean hasResgate = false;
 
-            for (int i = 1; i < linhas.length; i++) { // começa em 1 para pular cabeçalho
+            for (int i = 1; i < linhas.length; i++) {
                 String linha = linhas[i].trim();
                 if (linha.startsWith("COMPRA")) {
                     hasCompra = true;
@@ -747,38 +574,18 @@ public class TransacaoControllerTests {
         @Test
         @DisplayName("Cliente exporta extrato com apenas compras")
         void clienteExportaExtratoApenasCompras() throws Exception {
+            // Arrange
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
 
-            CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
-                    .codigoAcesso(cliente.getCodigoAcesso())
-                    .idAtivo(ativo.getId())
-                    .quantidade(2)
-                    .build();
+            // Act
+            CompraResponseDTO compraDTO = criarCompra(cliente, ativo, 2);
+            aprovarCompra(compraDTO.getId());
+            finalizarCompra(cliente.getId(), compraDTO.getId());
 
-            String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(compra)))
-                    .andExpect(status().isCreated())
-                    .andReturn().getResponse().getContentAsString();
+            String csvResponse = exportarExtrato(cliente.getId(), cliente.getCodigoAcesso());
 
-            CompraResponseDTO compraDTO = objectMapper.readValue(compraResponse, CompraResponseDTO.class);
-
-            driver.perform(patch("/compras/" + compraDTO.getId() + "/aprovar")
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
-                    .andExpect(status().isOk());
-
-            driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraDTO.getId())
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
-                    .andExpect(status().isOk());
-
-            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
-                    .andExpect(status().isOk())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
+            // Assert
             String[] linhas = csvResponse.split("\\r?\\n");
             assertEquals(2, linhas.length); // Cabeçalho + 1 compra
             assertTrue(linhas[1].startsWith("COMPRA"));
@@ -787,27 +594,17 @@ public class TransacaoControllerTests {
         @Test
         @DisplayName("Cliente exporta extrato com apenas resgates")
         void clienteExportaExtratoApenasResgates() throws Exception {
+            // Arrange
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
+
+            // Act
             inicializarCarteiraComAtivo(cliente, ativo, 5);
+            criarResgate(cliente, ativo, 3);
 
-            ResgatePostPutRequestDTO resgate = ResgatePostPutRequestDTO.builder()
-                    .idAtivo(ativo.getId())
-                    .quantidade(3)
-                    .build();
+            String csvResponse = exportarExtrato(cliente.getId(), cliente.getCodigoAcesso());
 
-            driver.perform(post("/clientes/" + cliente.getId() + "/resgate")
-                            .contentType(MediaType.APPLICATION_JSON)
-                            .content(objectMapper.writeValueAsString(resgate)))
-                    .andExpect(status().isCreated());
-
-            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
-                    .andExpect(status().isOk())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
+            // Assert
             String[] linhas = csvResponse.split("\\r?\\n");
             assertEquals(2, linhas.length); // Cabeçalho + 1 resgate
             assertTrue(linhas[1].startsWith("RESGATE"));
@@ -816,58 +613,27 @@ public class TransacaoControllerTests {
         @Test
         @DisplayName("Cliente exporta extrato com múltiplas transações do mesmo tipo")
         void clienteExportaExtratoMultiplasComprasResgates() throws Exception {
+            // Arrange
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
-
-            // Inicializa carteira
             inicializarCarteiraComAtivo(cliente, ativo, 10);
 
+            // Act
             // Cria duas compras
             for (int i = 0; i < 2; i++) {
-                CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
-                        .codigoAcesso(cliente.getCodigoAcesso())
-                        .idAtivo(ativo.getId())
-                        .quantidade(1 + i)
-                        .build();
-
-                String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(compra)))
-                        .andExpect(status().isCreated())
-                        .andReturn()
-                        .getResponse().getContentAsString();
-
-                CompraResponseDTO compraDTO = objectMapper.readValue(compraResponse, CompraResponseDTO.class);
-
-                driver.perform(patch("/compras/" + compraDTO.getId() + "/aprovar")
-                                .param("codigoAcesso", cliente.getCodigoAcesso()))
-                        .andExpect(status().isOk());
-
-                driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraDTO.getId())
-                                .param("codigoAcesso", cliente.getCodigoAcesso()))
-                        .andExpect(status().isOk());
+                CompraResponseDTO compraDTO = criarCompra(cliente, ativo, 1 + i);
+                aprovarCompra(compraDTO.getId());
+                finalizarCompra(cliente.getId(), compraDTO.getId());
             }
 
             // Cria dois resgates
             for (int i = 0; i < 2; i++) {
-                ResgatePostPutRequestDTO resgate = ResgatePostPutRequestDTO.builder()
-                        .idAtivo(ativo.getId())
-                        .quantidade(1 + i)
-                        .build();
-
-                driver.perform(post("/clientes/" + cliente.getId() + "/resgate")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(resgate)))
-                        .andExpect(status().isCreated());
+                criarResgate(cliente, ativo, 1 + i);
             }
 
-            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
-                    .andExpect(status().isOk())
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
+            String csvResponse = exportarExtrato(cliente.getId(), cliente.getCodigoAcesso());
 
+            // Assert
             String[] linhas = csvResponse.split("\\r?\\n");
             assertEquals(5, linhas.length); // Cabeçalho + 4 transações
         }
@@ -875,24 +641,27 @@ public class TransacaoControllerTests {
 
     @Nested
     @DisplayName("GET /transacoes - Administrador pode consultar todas transações, filtrando ou não")
-    class listarTransacoes {
+    class ListarTransacoes {
 
         @Test
         @DisplayName("Deve retornar exceção quando o código do admin for inválido")
         void quandoCodigoAcessoInvalido() throws Exception {
+            // Arrange
             criarTransacoes();
+
+            // Act & Assert
             driver.perform(get(URI_TRANSACOES)
                             .param("codigoAcesso", CODIGO_ACESSO_INVALIDO)
                             .contentType(MediaType.APPLICATION_JSON))
                     .andExpect(status().isBadRequest())
                     .andDo(print())
                     .andExpect(jsonPath("$.message", containsString("Codigo de acesso invalido!")));
-
         }
 
         @Test
         @DisplayName("Deve retornar uma lista vazia quando não tiver sido negociado nada ainda")
         void listarZeroTransacoes() throws Exception {
+            // Act
             String jsonResponse = driver.perform(get(URI_TRANSACOES)
                             .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -901,19 +670,19 @@ public class TransacaoControllerTests {
                     .andReturn().getResponse().getContentAsString();
 
             List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
+            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(compras, resgates);
 
-            List<Compra> comprasEsperadas = compras;
-            List<Resgate> resgatesEsperados = resgates;
-
-            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
-
+            // Assert
             assertEquals(expected, result);
         }
 
         @Test
         @DisplayName("Deve retornar uma lista com todas as transações de compra e resgate")
         void listarTodasTransacoes() throws Exception {
+            // Arrange
             criarTransacoes();
+
+            // Act
             String jsonResponse = driver.perform(get(URI_TRANSACOES)
                             .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
                             .contentType(MediaType.APPLICATION_JSON))
@@ -922,20 +691,19 @@ public class TransacaoControllerTests {
                     .andReturn().getResponse().getContentAsString();
 
             List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
+            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(compras, resgates);
 
-            List<Compra> comprasEsperadas = compras;
-            List<Resgate> resgatesEsperados = resgates;
-
-            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
-
+            // Assert
             assertEquals(expected, result);
         }
 
         @Test
         @DisplayName("Deve retornar uma lista de transações filtradas pelo tipoAtivo == TesouroDireto")
         void quandoFiltrarPorTesouroDireto() throws Exception {
+            // Arrange
             criarTransacoes();
 
+            // Act
             String jsonResponse = driver.perform(get(URI_TRANSACOES)
                             .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
                             .param("tipoAtivo", "TESOURO_DIRETO")
@@ -946,21 +714,9 @@ public class TransacaoControllerTests {
 
             List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
 
-            // Filtra compras/resgates que são do tipo TesouroDireto
-            List<Compra> comprasEsperadas = compras.stream()
-                    .filter(c -> {
-                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(c.getIdAtivo())).findFirst().orElse(null);
-                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("TESOURO_DIRETO");
-                    })
-                    .toList();
-
-            List<Resgate> resgatesEsperados = resgates.stream()
-                    .filter(r -> {
-                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(r.getIdAtivo())).findFirst().orElse(null);
-                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("TESOURO_DIRETO");
-                    })
-                    .toList();
-
+            // Assert
+            List<Compra> comprasEsperadas = filtrarComprasPorTipoAtivo("TESOURO_DIRETO");
+            List<Resgate> resgatesEsperados = filtrarResgatesPorTipoAtivo("TESOURO_DIRETO");
             List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
 
             assertEquals(expected, result);
@@ -969,8 +725,10 @@ public class TransacaoControllerTests {
         @Test
         @DisplayName("Deve retornar uma lista de transações filtradas pelo tipoAtivo == Acao")
         void quandoFiltrarPorAcao() throws Exception {
+            // Arrange
             criarTransacoes();
 
+            // Act
             String jsonResponse = driver.perform(get(URI_TRANSACOES)
                             .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
                             .param("tipoAtivo", "ACAO")
@@ -981,21 +739,9 @@ public class TransacaoControllerTests {
 
             List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
 
-            // Filtra compras/resgates que são do tipo Acao
-            List<Compra> comprasEsperadas = compras.stream()
-                    .filter(c -> {
-                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(c.getIdAtivo())).findFirst().orElse(null);
-                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("ACAO");
-                    })
-                    .toList();
-
-            List<Resgate> resgatesEsperados = resgates.stream()
-                    .filter(r -> {
-                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(r.getIdAtivo())).findFirst().orElse(null);
-                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("ACAO");
-                    })
-                    .toList();
-
+            // Assert
+            List<Compra> comprasEsperadas = filtrarComprasPorTipoAtivo("ACAO");
+            List<Resgate> resgatesEsperados = filtrarResgatesPorTipoAtivo("ACAO");
             List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
 
             assertEquals(expected, result);
@@ -1004,8 +750,10 @@ public class TransacaoControllerTests {
         @Test
         @DisplayName("Deve retornar uma lista de transações filtradas pelo tipoAtivo == CriptoMoeda")
         void quandoFiltrarPorCriptomoeda() throws Exception {
+            // Arrange
             criarTransacoes();
 
+            // Act
             String jsonResponse = driver.perform(get(URI_TRANSACOES)
                             .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
                             .param("tipoAtivo", "CRIPTOMOEDA")
@@ -1016,34 +764,23 @@ public class TransacaoControllerTests {
 
             List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
 
-            // Filtra compras/resgates que são do tipo CriptoMoeda
-            List<Compra> comprasEsperadas = compras.stream()
-                    .filter(c -> {
-                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(c.getIdAtivo())).findFirst().orElse(null);
-                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("CRIPTOMOEDA");
-                    })
-                    .toList();
-
-            List<Resgate> resgatesEsperados = resgates.stream()
-                    .filter(r -> {
-                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(r.getIdAtivo())).findFirst().orElse(null);
-                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("CRIPTOMOEDA");
-                    })
-                    .toList();
-
+            // Assert
+            List<Compra> comprasEsperadas = filtrarComprasPorTipoAtivo("CRIPTOMOEDA");
+            List<Resgate> resgatesEsperados = filtrarResgatesPorTipoAtivo("CRIPTOMOEDA");
             List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
 
             assertEquals(expected, result);
         }
 
         @Test
-        @DisplayName("Deve retornar uma lista de transações filtradas por TipoAtivo")
-        void quandoFiltrarDataTime() throws Exception {
+        @DisplayName("Deve retornar uma lista de transações filtradas por período")
+        void quandoFiltrarPorPeriodo() throws Exception {
+            // Arrange
             criarTransacoes();
-
             LocalDateTime dataInicio = LocalDateTime.of(2025, 9, 7, 5, 0, 0);
             LocalDateTime dataFim = LocalDateTime.of(2025, 9, 7, 10, 0, 0);
 
+            // Act
             String jsonResponse = driver.perform(get(URI_TRANSACOES)
                             .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
                             .param("dataInicio", String.valueOf(dataInicio))
@@ -1055,15 +792,9 @@ public class TransacaoControllerTests {
 
             List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
 
-            // Filtra compras e resgates pelo período
-            List<Compra> comprasEsperadas = compras.stream()
-                    .filter(c -> !c.getDataSolicitacao().isBefore(dataInicio) && !c.getDataSolicitacao().isAfter(dataFim))
-                    .toList();
-
-            List<Resgate> resgatesEsperados = resgates.stream()
-                    .filter(r -> !r.getDataSolicitacao().isBefore(dataInicio) && !r.getDataSolicitacao().isAfter(dataFim))
-                    .toList();
-
+            // Assert
+            List<Compra> comprasEsperadas = filtrarComprasPorPeriodo(dataInicio, dataFim);
+            List<Resgate> resgatesEsperados = filtrarResgatesPorPeriodo(dataInicio, dataFim);
             List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
 
             assertEquals(expected, result);
@@ -1071,11 +802,12 @@ public class TransacaoControllerTests {
 
         @Test
         @DisplayName("Deve retornar uma lista de transações feitas por um cliente")
-        void quandoFiltrarCliente() throws Exception {
+        void quandoFiltrarPorCliente() throws Exception {
+            // Arrange
             criarTransacoes();
-
             Long clientId = clientes.get(3).getId();
 
+            // Act
             String jsonResponse = driver.perform(get(URI_TRANSACOES)
                             .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
                             .param("clienteId", String.valueOf(clientId))
@@ -1086,26 +818,21 @@ public class TransacaoControllerTests {
 
             List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
 
-            // Filtra compras/resgates que pertencem ao clientId
-            List<Compra> comprasEsperadas = compras.stream()
-                    .filter(c -> c.getIdCliente().equals(clientId))
-                    .toList();
-
-            List<Resgate> resgatesEsperados = resgates.stream()
-                    .filter(r -> r.getIdCliente().equals(clientId))
-                    .toList();
-
+            // Assert
+            List<Compra> comprasEsperadas = filtrarComprasPorCliente(clientId);
+            List<Resgate> resgatesEsperados = filtrarResgatesPorCliente(clientId);
             List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
 
             assertEquals(expected, result);
         }
 
-
         @Test
         @DisplayName("Deve retornar uma lista de transações filtradas pelo tipoOperação == compra")
         void quandoFiltrarPorCompra() throws Exception {
+            // Arrange
             criarTransacoes();
 
+            // Act
             String jsonResponse = driver.perform(get(URI_TRANSACOES)
                             .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
                             .param("tipoOperacao", "compra")
@@ -1116,19 +843,18 @@ public class TransacaoControllerTests {
 
             List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
 
-            List<Compra> comprasEsperadas = compras;
-            List<Resgate> resgatesEsperados = List.of();
-
-            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
-
+            // Assert
+            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(compras, List.of());
             assertEquals(expected, result);
         }
 
         @Test
         @DisplayName("Deve retornar uma lista de transações filtradas pelo tipoOperação == resgate")
         void quandoFiltrarPorResgate() throws Exception {
+            // Arrange
             criarTransacoes();
 
+            // Act
             String jsonResponse = driver.perform(get(URI_TRANSACOES)
                             .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
                             .param("tipoOperacao", "resgate")
@@ -1139,14 +865,52 @@ public class TransacaoControllerTests {
 
             List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
 
-            List<Compra> comprasEsperadas = List.of();
-            List<Resgate> resgatesEsperados = resgates;
-
-            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
-
+            // Assert
+            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(List.of(), resgates);
             assertEquals(expected, result);
         }
 
+        // Métodos auxiliares para filtros
+        private List<Compra> filtrarComprasPorTipoAtivo(String tipoAtivo) {
+            return compras.stream()
+                    .filter(c -> {
+                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(c.getIdAtivo())).findFirst().orElse(null);
+                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals(tipoAtivo);
+                    })
+                    .toList();
+        }
+
+        private List<Resgate> filtrarResgatesPorTipoAtivo(String tipoAtivo) {
+            return resgates.stream()
+                    .filter(r -> {
+                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(r.getIdAtivo())).findFirst().orElse(null);
+                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals(tipoAtivo);
+                    })
+                    .toList();
+        }
+
+        private List<Compra> filtrarComprasPorPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim) {
+            return compras.stream()
+                    .filter(c -> !c.getDataSolicitacao().isBefore(dataInicio) && !c.getDataSolicitacao().isAfter(dataFim))
+                    .toList();
+        }
+
+        private List<Resgate> filtrarResgatesPorPeriodo(LocalDateTime dataInicio, LocalDateTime dataFim) {
+            return resgates.stream()
+                    .filter(r -> !r.getDataSolicitacao().isBefore(dataInicio) && !r.getDataSolicitacao().isAfter(dataFim))
+                    .toList();
+        }
+
+        private List<Compra> filtrarComprasPorCliente(Long clienteId) {
+            return compras.stream()
+                    .filter(c -> c.getIdCliente().equals(clienteId))
+                    .toList();
+        }
+
+        private List<Resgate> filtrarResgatesPorCliente(Long clienteId) {
+            return resgates.stream()
+                    .filter(r -> r.getIdCliente().equals(clienteId))
+                    .toList();
+        }
     }
 }
-
