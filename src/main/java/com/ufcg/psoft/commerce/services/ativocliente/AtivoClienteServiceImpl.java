@@ -1,15 +1,11 @@
 package com.ufcg.psoft.commerce.services.ativocliente;
 
-import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
-import com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
 import com.ufcg.psoft.commerce.exceptions.ServicoNaoDisponivelParaPlanoException;
-import com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
-import com.ufcg.psoft.commerce.loggers.Logger;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
 import com.ufcg.psoft.commerce.services.ativo.AtivoService;
 import com.ufcg.psoft.commerce.services.cliente.ClienteService;

@@ -1,10 +1,7 @@
 package com.ufcg.psoft.commerce.services.ativocliente;
-
-import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.exceptions.ServicoNaoDisponivelParaPlanoException;
 import org.springframework.stereotype.Service;
-
 import java.util.List;
 
 @Service

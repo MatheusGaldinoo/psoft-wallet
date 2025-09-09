@@ -1,6 +1,5 @@
 package com.ufcg.psoft.commerce.interfaces.estadoresgate;
 
-import com.ufcg.psoft.commerce.enums.EstadoResgate;
 import com.ufcg.psoft.commerce.models.transacao.Resgate;
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,13 +1,11 @@
 package com.ufcg.psoft.commerce.repositories;
 
-import com.ufcg.psoft.commerce.enums.EstadoCompra;
 import com.ufcg.psoft.commerce.enums.EstadoResgate;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.models.transacao.Resgate;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 

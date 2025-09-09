@@ -1,8 +1,6 @@
 package com.ufcg.psoft.commerce.services.carteira;
 
 import com.ufcg.psoft.commerce.dtos.carteira.AtivoCarteiraResponseDTO;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import org.springframework.stereotype.Service;
 
 import java.util.List;

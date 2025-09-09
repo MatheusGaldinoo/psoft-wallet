@@ -48,12 +48,9 @@ public class ResgateServiceImpl implements ResgateService, TransacaoStrategy {
     @Autowired
     ModelMapper modelMapper;
 
-    // TODO - o id do resgate muda antes e depois da aprovação, pois ele não é atualizado, outro é criado.
-
     @Override
     public ResgateResponseDTO solicitarResgate(Long idCliente, ResgatePostPutRequestDTO dto) {
         Cliente cliente = clienteService.buscarPorId(idCliente);
-        // TODO - No geral, é melhor tratar com entidades ou DTO entre os Services? Aqui parece melhor entidade...
         AtivoResponseDTO ativo = ativoService.recuperar(dto.getIdAtivo());
 
         carteiraService.validarQuantidadeDisponivel(idCliente, dto.getIdAtivo(), dto.getQuantidade());
@@ -73,7 +70,6 @@ public class ResgateServiceImpl implements ResgateService, TransacaoStrategy {
 
         resgateRepository.save(resgate);
         clienteService.salvar(cliente);
-        // TODO - Acredito que pode tirar esse save de cliente
 
         return modelMapper.map(resgate, ResgateResponseDTO.class);
     }
@@ -136,7 +132,6 @@ public class ResgateServiceImpl implements ResgateService, TransacaoStrategy {
         return modelMapper.map(resgate, ResgateResponseDTO.class);
     }
 
-    // TODO - Incompleto para testes, falta fazer os filtros funcionarem.
     @Override
     public List<ResgateResponseDTO> listarResgatesDoCliente(Long idCliente, String status, String periodoInicio, String periodoFim) {
         List<Resgate> resgates = resgateRepository.findByIdCliente(idCliente);
@@ -163,10 +158,5 @@ public class ResgateServiceImpl implements ResgateService, TransacaoStrategy {
                     transacaoDTO.setResgate(resgateDTO);
                     return transacaoDTO;
                 }).toList();
-    }
-
-    @Override
-    public Resgate buscarPorId(Long idResgate) {
-        return resgateRepository.findById(idResgate).orElseThrow(ResgateNaoEncontradoException::new);
     }
 }
