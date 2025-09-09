@@ -101,6 +101,8 @@ public class CarteiraServiceImpl implements CarteiraService {
         double custo = precoMedio * quantidade;
         double lucro = valorVenda - custo;
 
+        if (lucro <= 0) return 0.0;
+
         return calcularImpostoTipoAtivo(ativo, lucro);
     }
 

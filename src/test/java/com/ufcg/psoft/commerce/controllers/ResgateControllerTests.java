@@ -866,5 +866,95 @@ public class ResgateControllerTests {
             assertEquals(1125.225, resgate.getImposto(), 0.0001);
         }
 
+        @Test
+        @DisplayName("Impostos para resgate sem lucro (0.0)")
+        void impostoSemLucro() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(3);
+
+            inicializarCarteiraComAtivo(cliente, ativo, 1);
+
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(1)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
+            driver.perform(post(URI_CLIENTES + "/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isCreated());
+
+            String response = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() + "/resgates"))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<ResgateResponseDTO> resgates = objectMapper.readValue(
+                    response,
+                    new TypeReference<List<ResgateResponseDTO>>() {
+                    }
+            );
+
+            assertEquals(1, resgates.size());
+            ResgateResponseDTO resgate = resgates.get(0);
+
+            assertEquals(0.0, resgate.getImposto(), 0.0001);
+        }
+
+        @Test
+        @DisplayName("Impostos para resgate com prejuízo")
+        void impostoResgateComPrejuizo() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(3);
+
+            inicializarCarteiraComAtivo(cliente, ativo, 1);
+
+            ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(1)
+                    .build();
+            String json = objectMapper.writeValueAsString(dto);
+
+            AtivoPostPutRequestDTO ativoAtualizado = AtivoPostPutRequestDTO.builder()
+                    .nome("Nome Atualizado")
+                    .descricao("Descrição Atualizada")
+                    .valor(1.00)
+                    .tipo(ativo.getTipo().getNomeTipo())
+                    .statusDisponibilidade(StatusDisponibilidade.DISPONIVEL)
+                    .codigoAcesso("123456")
+                    .build();
+
+            String ativoJson = objectMapper.writeValueAsString(ativoAtualizado);
+
+            driver.perform(
+                            put(String.format("/ativos/%d", ativo.getId()))
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(ativoJson))
+                    .andExpect(status().isOk())
+                    .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            driver.perform(post(URI_CLIENTES + "/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(json))
+                    .andExpect(status().isCreated());
+
+            String response = driver.perform(get(URI_CLIENTES + "/" + cliente.getId() + "/resgates"))
+                    .andExpect(status().isOk())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<ResgateResponseDTO> resgates = objectMapper.readValue(
+                    response,
+                    new TypeReference<List<ResgateResponseDTO>>() {
+                    }
+            );
+
+            assertEquals(1, resgates.size());
+            ResgateResponseDTO resgate = resgates.get(0);
+
+            assertEquals(0.0, resgate.getImposto(), 0.0001);
+        }
+
     }
 }
