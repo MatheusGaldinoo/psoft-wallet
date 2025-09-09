@@ -1126,12 +1126,12 @@ public class CompraControllerTests {
         }
 
         @Test
-        @DisplayName("Deve retornar 400 quando cliente não existir") // Mudar para 404 depois (isNotFound())
+        @DisplayName("Deve retornar 400 quando cliente não existir")
         void quandoClienteNaoExiste() throws Exception {
             Long idCliente = 99999L;
 
             driver.perform(get("/clientes/" + idCliente + "/carteira"))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print());
         }
     }
@@ -1216,7 +1216,7 @@ public class CompraControllerTests {
             driver.perform(post("/clientes/" + idClienteInexistente + "/compras")
                             .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print());
         }
 
