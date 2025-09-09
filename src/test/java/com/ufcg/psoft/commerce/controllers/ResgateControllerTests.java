@@ -3,7 +3,6 @@ package com.ufcg.psoft.commerce.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
-import com.ufcg.psoft.commerce.dtos.ativo.AtivoCotacaoRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.AtualizarStatusResgateDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
@@ -18,6 +17,7 @@ import com.ufcg.psoft.commerce.models.ativo.tipo.CriptoMoeda;
 import com.ufcg.psoft.commerce.models.ativo.tipo.TesouroDireto;
 import com.ufcg.psoft.commerce.models.carteira.AtivoCarteira;
 import com.ufcg.psoft.commerce.models.carteira.Carteira;
+import com.ufcg.psoft.commerce.models.transacao.Resgate;
 import com.ufcg.psoft.commerce.models.usuario.Administrador;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import com.ufcg.psoft.commerce.repositories.*;
@@ -38,6 +38,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.http.MediaType;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -52,6 +53,7 @@ public class ResgateControllerTests {
     final String URI_CLIENTES = "/clientes";
     final String URI_RESGATES = "/resgates";
     final String CODIGO_ACESSO_VALIDO = "123456";
+    final String CODIGO_ACESSO_INVALIDO = "000000";
 
     @Autowired
     MockMvc driver;
@@ -119,6 +121,23 @@ public class ResgateControllerTests {
         for (int i = 8; i <= 10; i++) {
             criarAtivo("Ativo" + i, acao, 1.0 * i, StatusDisponibilidade.INDISPONIVEL);
         }
+    }
+
+    private Resgate criarResgate(Cliente cliente, Ativo ativo, EstadoResgate estado) {
+        Resgate resgate = Resgate.builder()
+                .idCliente(cliente.getId())
+                .idAtivo(ativo.getId())
+                .quantidade(2.0)
+                .precoUnitario(100.0)
+                .tipoAtivo(ativo.getTipo().getNomeTipo())
+                .valorTotal(1200.0)
+                .dataSolicitacao(LocalDateTime.of(2025, 9, 8, 1, 0))
+                .dataFinalizacao(LocalDateTime.of(2025, 9, 8, 13, 0))
+                .imposto(10.0)
+                .estadoAtual(estado)
+                .build();
+
+        return resgateRepository.save(resgate);
     }
 
     private void criarCliente(String nome, TipoPlano tipo) {
@@ -957,4 +976,195 @@ public class ResgateControllerTests {
         }
 
     }
+
+    @Nested
+    @DisplayName("Testes para quando o administrador confirmar a elegibilidade do resgate")
+    class AtualizarResgate {
+
+        @Test
+        @DisplayName("Deve atualizar o status de um resgate para confirmado com sucesso")
+        void atualizaResgate() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.SOLICITADO);
+            Long resgateIdValido = resgate.getId();
+
+            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            String jsonResponse = driver.perform(patch(URI_RESGATES + "/" +  resgateIdValido)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonRequest))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            ResgateResponseDTO result = objectMapper.readValue(jsonResponse, ResgateResponseDTO.class);
+
+            ResgateResponseDTO expected = ResgateResponseDTO.builder()
+                    .id(resgate.getId())
+                    .idCliente(resgate.getIdCliente())
+                    .estado(EstadoResgate.CONFIRMADO)
+                    .idAtivo(resgate.getIdAtivo())
+                    .quantidade(resgate.getQuantidade())
+                    .imposto(resgate.getImposto())
+                    .dataSolicitacao(resgate.getDataSolicitacao())
+                    .dataFinalizacao(resgate.getDataFinalizacao())
+                    .build();
+
+            assertEquals(expected, result);
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção")
+        void codigoAcessoInvalido() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.SOLICITADO);
+            Long resgateIdValido = resgate.getId();
+
+            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_INVALIDO)
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgateIdValido)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonRequest))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Codigo de acesso invalido!")));
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção")
+        void quandoNaoEncontrarResgate() throws Exception {
+            Long resgateIdInvalido = 999L;
+
+            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgateIdInvalido)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonRequest))
+                    .andExpect(status().isNotFound())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Resgate nao encontrado!")));
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção")
+        void quandoResgateJaEstiverConfirmado() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.CONFIRMADO);
+            Long resgateIdValido = resgate.getId();
+
+            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgateIdValido)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonRequest))
+                    .andExpect(status().isConflict())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Resgate nao esta pendente!")));
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção")
+        void quandoResgateJaEstiverEmConta() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.EM_CONTA);
+            Long resgateIdValido = resgate.getId();
+
+            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgateIdValido)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonRequest))
+                    .andExpect(status().isConflict())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Resgate nao esta pendente!")));
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção")
+        void quandoClienteNaoEncontrado() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.SOLICITADO);
+            Long resgateIdValido = resgate.getId();
+
+            // Apaga o Cliente para que ele não seja encontrado
+            clienteRepository.deleteAll();
+
+            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgateIdValido)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonRequest))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("O cliente consultado nao existe!")));
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção")
+        void quandoAtivoNaoEncontrado() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.SOLICITADO);
+            Long resgateIdValido = resgate.getId();
+
+            // Apaga o Cliente para que ele não seja encontrado
+            ativoRepository.deleteAll();
+
+            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgateIdValido)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonRequest))
+                    .andExpect(status().isBadRequest())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
+        }
+    }
+
 }
