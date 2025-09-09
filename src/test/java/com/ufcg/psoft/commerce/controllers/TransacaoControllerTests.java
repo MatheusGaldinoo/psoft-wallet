@@ -31,7 +31,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -574,6 +573,290 @@ public class TransacaoControllerTests {
     }
 
     @Nested
+    @DisplayName("US20 - Exportação de extrato CSV")
+    class ClienteExportaExtratoCSV {
+
+        @Test
+        @DisplayName("Cliente exporta extrato com compras e resgates")
+        void clienteExportaExtratoComTransacoes() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            // Criar uma compra
+            CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(cliente.getCodigoAcesso())
+                    .idAtivo(ativo.getId())
+                    .quantidade(2)
+                    .build();
+
+            String compraJson = objectMapper.writeValueAsString(compra);
+
+            driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(compraJson))
+                    .andExpect(status().isCreated());
+
+            // Criar um resgate
+            inicializarCarteiraComAtivo(cliente, ativo, 5);
+
+            ResgatePostPutRequestDTO resgate = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(1)
+                    .build();
+
+            String resgateJson = objectMapper.writeValueAsString(resgate);
+
+            driver.perform(post("/clientes/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(resgateJson))
+                    .andExpect(status().isCreated());
+
+            // Exportar CSV
+            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
+                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                    .andExpect(status().isOk())
+                    .andExpect(header().string("Content-Disposition",
+                            containsString("extrato_" + cliente.getId() + ".csv")))
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            assertTrue(csvResponse.contains("Tipo,Ativo,Quantidade,Imposto,Valor,DataSolicitacao,DataFinalizacao"));
+            assertTrue(csvResponse.contains("COMPRA"));
+            assertTrue(csvResponse.contains("RESGATE"));
+            assertTrue(csvResponse.contains(String.valueOf(ativo.getId())));
+        }
+
+        @Test
+        @DisplayName("Cliente exporta extrato sem transações")
+        void clienteExportaExtratoSemTransacoes() throws Exception {
+            Cliente cliente = clientes.get(1);
+
+            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
+                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            // Apenas o cabeçalho deve estar presente
+            assertEquals("Tipo,Ativo,Quantidade,Imposto,Valor,DataSolicitacao,DataFinalizacao\n", csvResponse);
+        }
+
+        @Test
+        @DisplayName("Cliente exporta extrato com código de acesso inválido")
+        void clienteExportaExtratoCodigoAcessoInvalido() throws Exception {
+            Cliente cliente = clientes.get(0);
+
+            driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
+                            .param("codigoAcesso", CODIGO_ACESSO_INVALIDO))
+                    .andExpect(status().is4xxClientError());
+        }
+
+        @Test
+        @DisplayName("Verifica conteúdo do CSV - valores e impostos")
+        void clienteExportaExtratoConteudoCSV() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(cliente.getCodigoAcesso())
+                    .idAtivo(ativo.getId())
+                    .quantidade(3)
+                    .build();
+
+            String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(compra)))
+                    .andExpect(status().isCreated())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            CompraResponseDTO compraDTO = objectMapper.readValue(compraResponse, CompraResponseDTO.class);
+
+            driver.perform(patch("/compras/" + compraDTO.getId() + "/aprovar")
+                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                    .andExpect(status().isOk());
+
+            driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraDTO.getId())
+                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                    .andExpect(status().isOk());
+
+            inicializarCarteiraComAtivo(cliente, ativo, 5);
+
+            ResgatePostPutRequestDTO resgate = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(2)
+                    .build();
+
+            driver.perform(post("/clientes/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(resgate)))
+                    .andExpect(status().isCreated());
+
+            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
+                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            String[] linhas = csvResponse.split("\\r?\\n"); // Suporta \n ou \r\n
+
+            assertEquals(3, linhas.length); // Cabeçalho + 2 transações
+
+            boolean hasCompra = false;
+            boolean hasResgate = false;
+
+            for (int i = 1; i < linhas.length; i++) { // começa em 1 para pular cabeçalho
+                String linha = linhas[i].trim();
+                if (linha.startsWith("COMPRA")) {
+                    hasCompra = true;
+                    assertTrue(linha.contains(String.valueOf(ativo.getId())), "Compra deve conter ID do ativo");
+                    assertTrue(linha.contains("0"), "Compra não deve ter imposto");
+                }
+                if (linha.startsWith("RESGATE")) {
+                    hasResgate = true;
+                    assertTrue(linha.contains(String.valueOf(ativo.getId())), "Resgate deve conter ID do ativo");
+                    assertTrue(linha.contains("2.0") || linha.contains("2"), "Resgate deve conter quantidade correta");
+                }
+            }
+
+            assertTrue(hasCompra, "CSV deve conter transação do tipo COMPRA");
+            assertTrue(hasResgate, "CSV deve conter transação do tipo RESGATE");
+        }
+
+        @Test
+        @DisplayName("Cliente exporta extrato com apenas compras")
+        void clienteExportaExtratoApenasCompras() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
+                    .codigoAcesso(cliente.getCodigoAcesso())
+                    .idAtivo(ativo.getId())
+                    .quantidade(2)
+                    .build();
+
+            String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(compra)))
+                    .andExpect(status().isCreated())
+                    .andReturn().getResponse().getContentAsString();
+
+            CompraResponseDTO compraDTO = objectMapper.readValue(compraResponse, CompraResponseDTO.class);
+
+            driver.perform(patch("/compras/" + compraDTO.getId() + "/aprovar")
+                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                    .andExpect(status().isOk());
+
+            driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraDTO.getId())
+                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                    .andExpect(status().isOk());
+
+            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
+                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            String[] linhas = csvResponse.split("\\r?\\n");
+            assertEquals(2, linhas.length); // Cabeçalho + 1 compra
+            assertTrue(linhas[1].startsWith("COMPRA"));
+        }
+
+        @Test
+        @DisplayName("Cliente exporta extrato com apenas resgates")
+        void clienteExportaExtratoApenasResgates() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+            inicializarCarteiraComAtivo(cliente, ativo, 5);
+
+            ResgatePostPutRequestDTO resgate = ResgatePostPutRequestDTO.builder()
+                    .idAtivo(ativo.getId())
+                    .quantidade(3)
+                    .build();
+
+            driver.perform(post("/clientes/" + cliente.getId() + "/resgate")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(resgate)))
+                    .andExpect(status().isCreated());
+
+            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
+                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            String[] linhas = csvResponse.split("\\r?\\n");
+            assertEquals(2, linhas.length); // Cabeçalho + 1 resgate
+            assertTrue(linhas[1].startsWith("RESGATE"));
+        }
+
+        @Test
+        @DisplayName("Cliente exporta extrato com múltiplas transações do mesmo tipo")
+        void clienteExportaExtratoMultiplasComprasResgates() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            // Inicializa carteira
+            inicializarCarteiraComAtivo(cliente, ativo, 10);
+
+            // Cria duas compras
+            for (int i = 0; i < 2; i++) {
+                CompraPostPutRequestDTO compra = CompraPostPutRequestDTO.builder()
+                        .codigoAcesso(cliente.getCodigoAcesso())
+                        .idAtivo(ativo.getId())
+                        .quantidade(1 + i)
+                        .build();
+
+                String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(compra)))
+                        .andExpect(status().isCreated())
+                        .andReturn()
+                        .getResponse().getContentAsString();
+
+                CompraResponseDTO compraDTO = objectMapper.readValue(compraResponse, CompraResponseDTO.class);
+
+                driver.perform(patch("/compras/" + compraDTO.getId() + "/aprovar")
+                                .param("codigoAcesso", cliente.getCodigoAcesso()))
+                        .andExpect(status().isOk());
+
+                driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraDTO.getId())
+                                .param("codigoAcesso", cliente.getCodigoAcesso()))
+                        .andExpect(status().isOk());
+            }
+
+            // Cria dois resgates
+            for (int i = 0; i < 2; i++) {
+                ResgatePostPutRequestDTO resgate = ResgatePostPutRequestDTO.builder()
+                        .idAtivo(ativo.getId())
+                        .quantidade(1 + i)
+                        .build();
+
+                driver.perform(post("/clientes/" + cliente.getId() + "/resgate")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(resgate)))
+                        .andExpect(status().isCreated());
+            }
+
+            String csvResponse = driver.perform(get("/clientes/" + cliente.getId() + "/extrato")
+                            .param("codigoAcesso", cliente.getCodigoAcesso()))
+                    .andExpect(status().isOk())
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
+
+            String[] linhas = csvResponse.split("\\r?\\n");
+            assertEquals(5, linhas.length); // Cabeçalho + 4 transações
+        }
+    }
+
+    @Nested
     @DisplayName("GET /transacoes - Administrador pode consultar todas transações, filtrando ou não")
     class listarTransacoes {
 
@@ -848,6 +1131,5 @@ public class TransacaoControllerTests {
         }
 
     }
-
 }
 
