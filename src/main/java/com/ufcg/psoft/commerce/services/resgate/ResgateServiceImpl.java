@@ -97,24 +97,19 @@ public class ResgateServiceImpl implements ResgateService, TransacaoStrategy {
         if (dto.getEstado() == DecisaoAdministrador.APROVADO) {
             // Para Confirmado
             resgate.modificarEstadoResgate();
-            resgate.setDataFinalizacao(LocalDateTime.now());
-
             Logger.alertUser(clienteDto.getNome(),
                     String.format("Seu resgate do ativo '%s' foi aprovado!", ativoDto.getNome()));
 
-            executarResgate(resgate.getIdCliente(), idResgate);
+            resgateRepository.save(resgate);
+            return modelMapper.map(resgate, ResgateResponseDTO.class);
         } else {
             resgateRepository.delete(resgate);
-            // TODO - tecnicamente ele não pede para notificar rejeições.
+            resgateRepository.flush();
             Logger.alertUser(clienteDto.getNome(),
                     String.format("Seu resgate do ativo '%s' foi rejeitado!", ativoDto.getNome()));
+            throw new ResgateRejeitadoException();
         }
-
-        resgateRepository.save(resgate);
-
-        return modelMapper.map(resgate, ResgateResponseDTO.class);
     }
-
 
     @Transactional
     @Override
@@ -152,7 +147,9 @@ public class ResgateServiceImpl implements ResgateService, TransacaoStrategy {
 
     @Override
     public ResgateResponseDTO consultarResgate(Long idResgate) {
-        return modelMapper.map(resgateRepository.findById(idResgate), ResgateResponseDTO.class);
+        Resgate resgate = resgateRepository.findById(idResgate)
+                .orElseThrow(ResgateNaoEncontradoException::new);
+        return modelMapper.map(resgate, ResgateResponseDTO.class);
     }
 
     // Todos atributos aqui são filtros da última US

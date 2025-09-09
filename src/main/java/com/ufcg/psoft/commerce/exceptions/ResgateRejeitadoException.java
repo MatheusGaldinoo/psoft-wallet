@@ -4,8 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ResponseStatus(HttpStatus.CONFLICT)
-public class ResgateNaoConfirmadoException extends RuntimeException {
-    public ResgateNaoConfirmadoException() {
-        super("Resgate nao foi julgado pelo administrador!");
-    }
+public class ResgateRejeitadoException extends RuntimeException {
+  public ResgateRejeitadoException() {super("Resgate rejeitado!");
+  }
 }

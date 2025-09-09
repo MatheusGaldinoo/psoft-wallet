@@ -48,6 +48,14 @@ public class ResgateController {
                 resgateService.listarResgatesDoCliente(idCliente, status, periodoInicio, periodoFim)
         );
     }
+  
+    @PostMapping("/resgates/{idResgate}/executar")
+    public ResponseEntity<ResgateResponseDTO> executarResgate(
+            @PathVariable Long idResgate,
+            @RequestParam Long idCliente
+    ) {
+        return ResponseEntity.ok(resgateService.executarResgate(idCliente, idResgate));
+    }
 
     // US17 - Admin atualiza status de um resgate (APROVADO e RECUSADO)
     @PatchMapping("/resgates/{idResgate}")
@@ -56,5 +64,4 @@ public class ResgateController {
             @Valid @RequestBody AtualizarStatusResgateDTO dto) {
         return ResponseEntity.ok(resgateService.atualizarStatusResgate(idResgate, dto));
     }
-
 }
