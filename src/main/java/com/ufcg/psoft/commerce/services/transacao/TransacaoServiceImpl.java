@@ -37,9 +37,6 @@ public class TransacaoServiceImpl implements TransacaoService{
     @Override
     public List<TransacaoResponseDTO> listarTransacoes(TransacaoQueryDTO transacaoQueryDTO){
 
-        LocalDateTime dataInicio = (transacaoQueryDTO.getData() != null) ? transacaoQueryDTO.getData().atStartOfDay() : null;
-        LocalDateTime dataFim = (transacaoQueryDTO.getData() != null) ? transacaoQueryDTO.getData().plusDays(1).atStartOfDay() : null;
-
         if (transacaoQueryDTO.getTipoOperacao() == null) {
             return strategies.values().stream()
                     .flatMap(s -> s.listarAllItens(
@@ -47,8 +44,8 @@ public class TransacaoServiceImpl implements TransacaoService{
                             transacaoQueryDTO.getTipoAtivo(),
                             transacaoQueryDTO.getStatusCompra(),
                             transacaoQueryDTO.getStatusResgate(),
-                            dataInicio,
-                            dataFim)
+                            transacaoQueryDTO.getDataInicio(),
+                            transacaoQueryDTO.getDataFim())
                     .stream()).collect(Collectors.toList());
         }
 
@@ -62,8 +59,8 @@ public class TransacaoServiceImpl implements TransacaoService{
                 transacaoQueryDTO.getTipoAtivo(),
                 transacaoQueryDTO.getStatusCompra(),
                 transacaoQueryDTO.getStatusResgate(),
-                dataInicio,
-                dataFim
+                transacaoQueryDTO.getDataInicio(),
+                transacaoQueryDTO.getDataFim()
         );
     }
 }

@@ -19,8 +19,8 @@ public interface ResgateRepository extends JpaRepository<Resgate, Long> {
             "AND (:tipoAtivo IS NULL OR r.tipoAtivo = :tipoAtivo) " +
             "AND (:statusResgate IS NULL OR r.estadoAtual = :statusResgate) " +
             "AND (:dataInicio IS NULL OR " +
-            "(r.dataSolicitacao BETWEEN :dataInicio AND :dataFim) OR " +
-            "(r.dataFinalizacao BETWEEN :dataInicio AND :dataFim)) "+
+            "(r.dataSolicitacao BETWEEN :dataInicio AND :dataFim)) " +
+            //"(r.dataFinalizacao BETWEEN :dataInicio AND :dataFim)) "+
             "ORDER BY r.dataSolicitacao DESC")
     List<Resgate> findAllResgates(Long clienteId, TipoAtivo tipoAtivo, EstadoResgate statusResgate, LocalDateTime dataInicio, LocalDateTime dataFim);
 }

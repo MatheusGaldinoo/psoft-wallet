@@ -21,8 +21,8 @@ public interface CompraRepository extends JpaRepository<Compra, Long> {
             "AND (:tipoAtivo IS NULL OR c.tipoAtivo= :tipoAtivo) " +
             "AND (:statusCompra IS NULL OR c.estadoAtual = :statusCompra) " +
             "AND (:dataInicio IS NULL OR " +
-            "(c.dataSolicitacao BETWEEN :dataInicio AND :dataFim) OR " +
-            "(c.dataFinalizacao BETWEEN :dataInicio AND :dataFim)) "+
+            "(c.dataSolicitacao BETWEEN :dataInicio AND :dataFim)) " +
+            //"(c.dataFinalizacao BETWEEN :dataInicio AND :dataFim)) "+
             "ORDER BY c.dataSolicitacao DESC")
     List<Compra> findAllCompras(Long clienteId, TipoAtivo tipoAtivo, EstadoCompra statusCompra, LocalDateTime dataInicio, LocalDateTime dataFim);
 }

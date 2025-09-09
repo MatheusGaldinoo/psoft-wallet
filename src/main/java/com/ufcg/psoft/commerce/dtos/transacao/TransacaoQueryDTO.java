@@ -6,6 +6,7 @@ import lombok.Data;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 @Data
 public class TransacaoQueryDTO {
@@ -14,7 +15,9 @@ public class TransacaoQueryDTO {
 
     private TipoAtivo tipoAtivo;
 
-    private LocalDate data;
+    private LocalDateTime dataInicio;
+
+    private LocalDateTime dataFim;
 
     private String tipoOperacao;
 

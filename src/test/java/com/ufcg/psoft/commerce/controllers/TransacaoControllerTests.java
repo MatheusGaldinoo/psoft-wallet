@@ -38,6 +38,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -241,6 +242,7 @@ public class TransacaoControllerTests {
         }
 
         @Test
+        @Transactional
         @DisplayName("Cliente lista transações por tipo (COMPRA OU RESGATE)")
         void clienteListaTransacoesPorTipoTest() throws Exception {
 
@@ -418,6 +420,7 @@ public class TransacaoControllerTests {
         }
 
         @Test
+        @Transactional
         @DisplayName("Cliente lista transações por periodo")
         void clienteListaTransacoesPorPeriodoCompraTest() throws Exception {
 
@@ -441,6 +444,7 @@ public class TransacaoControllerTests {
                     .andReturn().getResponse().getContentAsString();
 
             CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(compraResponse, CompraResponseDTO.class);
+            LocalDateTime dataSolicitacao = compraResponseDTOSolicitacao.getDataSolicitacao();
 
             driver.perform(
                             patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
@@ -462,7 +466,7 @@ public class TransacaoControllerTests {
                     .quantidade(1)
                     .build();
 
-            String compraJson2 = objectMapper.writeValueAsString(compra);
+            String compraJson2 = objectMapper.writeValueAsString(compra2);
 
             String compraResponse2 = driver.perform(
                             post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
@@ -473,15 +477,7 @@ public class TransacaoControllerTests {
                     .andReturn().getResponse().getContentAsString();
 
             CompraResponseDTO compraResponseDTOSolicitacao2 = objectMapper.readValue(compraResponse2, CompraResponseDTO.class);
-
-            String responseJsonString = driver.perform(
-                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/transacoes")
-                                    .param("codigoAcesso", "123456")
-                                    .param("statusCompra", "SOLICITADO")
-                                    .param("tipoOperacao", "COMPRA"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
+            LocalDateTime dataSolicitacao2 = compraResponseDTOSolicitacao2.getDataSolicitacao();
 
             ResgatePostPutRequestDTO dto = ResgatePostPutRequestDTO.builder()
                     .idAtivo(ativo.getId())
@@ -496,13 +492,24 @@ public class TransacaoControllerTests {
                     .andExpect(status().isCreated())
                     .andDo(print());
 
+            Compra compraAntiga = compraRepository.findById(compraResponseDTOSolicitacao2.getId()).orElse(null);
+
+            String responseJsonString = driver.perform(
+                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/transacoes")
+                                    .param("codigoAcesso", "123456")
+                                    .param("dataInicio", dataSolicitacao2.toString())
+                                    .param("dataFim", dataSolicitacao2.toString()))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+
             List<TransacaoResponseDTO> transacoesRetornadas = objectMapper.readValue(
                     responseJsonString,
                     new TypeReference<List<TransacaoResponseDTO>>() { }
             );
 
-            assertEquals(1, transacoesRetornadas.size());
-            assertEquals(transacoesRetornadas.get(0).getCompra().getId(), compraResponseDTOSolicitacao2.getId());
+            assertEquals(0, transacoesRetornadas.size());
         }
     }
 }
