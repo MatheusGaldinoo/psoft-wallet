@@ -49,7 +49,7 @@ public class ResgateController {
     }
 
     //US16 - Executa resgate confirmado
-    @PostMapping("/resgates/{idResgate}/executar")
+    @PostMapping("/resgates/{idResgate}")
     public ResponseEntity<ResgateResponseDTO> executarResgate(
             @PathVariable Long idResgate,
             @RequestParam Long idCliente

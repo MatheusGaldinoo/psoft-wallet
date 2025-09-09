@@ -50,7 +50,7 @@ public class CompraController {
     }
 
     // US12 - Cliente confirma compra disponível
-    @PatchMapping("/clientes/{idCliente}/finalizar/{idCompra}")
+    @PatchMapping("/clientes/{idCliente}/{idCompra}")
     public ResponseEntity<CompraResponseDTO> realizarCompra(@PathVariable Long idCliente, @PathVariable Long idCompra) {
         return ResponseEntity.status(HttpStatus.OK).body(compraService.executarCompra(idCliente, idCompra));
     }

@@ -312,7 +312,7 @@ public class TransacaoControllerTests {
 
     private void finalizarCompra(Long clienteId, Long compraId) throws Exception {
         driver.perform(
-                        patch(URI_COMPRAS_CLIENTES + "/" + clienteId + "/finalizar/" + compraId)
+                        patch(URI_COMPRAS_CLIENTES + "/" + clienteId + "/" + compraId)
                                 .param("codigoAcesso", CODIGO_ACESSO_VALIDO))
                 .andExpect(status().isOk())
                 .andDo(print());

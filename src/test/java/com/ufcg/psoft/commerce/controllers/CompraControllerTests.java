@@ -369,7 +369,7 @@ public class CompraControllerTests {
                                     .content(aprovacaoJson))
                     .andExpect(status().isOk());
 
-            driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraResponseDTOSolicitacao.getId()))
+            driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/" + compraResponseDTOSolicitacao.getId()))
                     .andExpect(status().isOk())
                     .andDo(print());
 
@@ -570,7 +570,7 @@ public class CompraControllerTests {
                                     .content(aprovacaoJson))
                     .andExpect(status().isOk());
 
-            driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraResponseDTOSolicitacao.getId()))
+            driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/" + compraResponseDTOSolicitacao.getId()))
                     .andExpect(status().isOk())
                     .andDo(print());
 
@@ -1019,7 +1019,7 @@ public class CompraControllerTests {
                             .build()
             );
 
-            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+            driver.perform(patch("/clientes/" + cliente.getId() + "/" + compra.getId()))
                     .andExpect(status().isOk())
                     .andDo(print())
                     .andExpect(jsonPath("$.estadoAtual").value("EM_CARTEIRA"));
@@ -1030,7 +1030,7 @@ public class CompraControllerTests {
         void confirmarCompraInexistente() throws Exception {
             Cliente cliente = clientes.get(0);
 
-            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/9999"))
+            driver.perform(patch("/clientes/" + cliente.getId() + "/9999"))
                     .andExpect(status().isNotFound());
         }
 
@@ -1051,7 +1051,7 @@ public class CompraControllerTests {
                             .build()
             );
 
-            driver.perform(patch("/clientes/" + cliente1.getId() + "/finalizar/" + compra.getId()))
+            driver.perform(patch("/clientes/" + cliente1.getId() + "/" + compra.getId()))
                     .andExpect(status().isForbidden());
         }
 
@@ -1071,7 +1071,7 @@ public class CompraControllerTests {
                             .build()
             );
 
-            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+            driver.perform(patch("/clientes/" + cliente.getId() + "/" + compra.getId()))
                     .andExpect(status().isBadRequest());
         }
 
@@ -1093,7 +1093,7 @@ public class CompraControllerTests {
                             .build()
             );
 
-            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+            driver.perform(patch("/clientes/" + cliente.getId() + "/" + compra.getId()))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.estadoAtual").value("EM_CARTEIRA"));
         }
@@ -1116,7 +1116,7 @@ public class CompraControllerTests {
                             .build()
             );
 
-            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+            driver.perform(patch("/clientes/" + cliente.getId() + "/" + compra.getId()))
                     .andExpect(status().isUnprocessableEntity());
         }
 
@@ -1136,7 +1136,7 @@ public class CompraControllerTests {
                             .build()
             );
 
-            driver.perform(patch("/clientes/" + cliente.getId() + "/finalizar/" + compra.getId()))
+            driver.perform(patch("/clientes/" + cliente.getId() + "/" + compra.getId()))
                     .andExpect(status().isBadRequest());
         }
     }
