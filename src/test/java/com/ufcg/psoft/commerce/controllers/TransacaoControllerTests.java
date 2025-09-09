@@ -290,7 +290,7 @@ public class TransacaoControllerTests {
             String compraJson = objectMapper.writeValueAsString(compra);
 
             String compraResponse = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(compraJson))
                     .andExpect(status().isCreated())
@@ -334,7 +334,7 @@ public class TransacaoControllerTests {
             String compraJson = objectMapper.writeValueAsString(compra);
 
             String compraResponse = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(compraJson))
                     .andExpect(status().isCreated())
@@ -366,7 +366,7 @@ public class TransacaoControllerTests {
             String compraJson2 = objectMapper.writeValueAsString(compra);
 
             String compraResponse2 = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(compraJson2))
                     .andExpect(status().isCreated())
@@ -423,7 +423,7 @@ public class TransacaoControllerTests {
             String compraJson = objectMapper.writeValueAsString(compra);
 
             String compraResponse = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(compraJson))
                     .andExpect(status().isCreated())
@@ -455,7 +455,7 @@ public class TransacaoControllerTests {
             String compraJson2 = objectMapper.writeValueAsString(compra);
 
             String compraResponse2 = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(compraJson2))
                     .andExpect(status().isCreated())
@@ -512,7 +512,7 @@ public class TransacaoControllerTests {
             String compraJson = objectMapper.writeValueAsString(compra);
 
             String compraResponse = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(compraJson))
                     .andExpect(status().isCreated())
@@ -545,7 +545,7 @@ public class TransacaoControllerTests {
             String compraJson2 = objectMapper.writeValueAsString(compra2);
 
             String compraResponse2 = driver.perform(
-                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                            post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(compraJson2))
                     .andExpect(status().isCreated())
@@ -608,7 +608,7 @@ public class TransacaoControllerTests {
 
             String compraJson = objectMapper.writeValueAsString(compra);
 
-            driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+            driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(compraJson))
                     .andExpect(status().isCreated());
@@ -682,7 +682,7 @@ public class TransacaoControllerTests {
                     .quantidade(3)
                     .build();
 
-            String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+            String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(compra)))
                     .andExpect(status().isCreated())
@@ -756,7 +756,7 @@ public class TransacaoControllerTests {
                     .quantidade(2)
                     .build();
 
-            String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+            String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(compra)))
                     .andExpect(status().isCreated())
@@ -830,7 +830,7 @@ public class TransacaoControllerTests {
                         .quantidade(1 + i)
                         .build();
 
-                String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/solicitar")
+                String compraResponse = driver.perform(post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(compra)))
                         .andExpect(status().isCreated())

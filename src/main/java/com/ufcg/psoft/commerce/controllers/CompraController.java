@@ -29,13 +29,13 @@ public class CompraController {
     ModelMapper modelMapper;
 
     // US09
-    @PostMapping("/clientes/{idCliente}/solicitar")
+    @PostMapping("/clientes/{idCliente}/compras")
     public ResponseEntity<CompraResponseDTO> solicitarCompra(@PathVariable Long idCliente, @Valid @RequestBody CompraPostPutRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(compraService.solicitarCompra(idCliente, dto));
     }
 
     // US10
-    @GetMapping("/clientes/{idCliente}/acompanhar-status")
+    @GetMapping("/clientes/{idCliente}/compras")
     public ResponseEntity<List<CompraResponseDTO>> listarComprasDoCliente(@PathVariable Long idCliente) {
         return ResponseEntity.status(HttpStatus.OK).body(compraService.listarComprasDoCliente(idCliente));
     }
@@ -59,7 +59,7 @@ public class CompraController {
     }
 
     // US13
-    @GetMapping("/clientes/{idCliente}/visualizar-carteira")
+    @GetMapping("/clientes/{idCliente}/carteira")
     public ResponseEntity<List<AtivoCarteiraResponseDTO>> visualizarCarteiraDoCliente(@PathVariable Long idCliente) {
         return ResponseEntity.status(HttpStatus.OK).body(carteiraService.visualizarCarteira(idCliente));
     }
