@@ -4,7 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
-import com.ufcg.psoft.commerce.dtos.resgate.AtualizarStatusResgateDTO;
+import com.ufcg.psoft.commerce.dtos.AtualizarStatusTransacaoDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.enums.DecisaoAdministrador;
@@ -302,7 +302,7 @@ public class ResgateControllerTests {
 
             ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
 
-            AtualizarStatusResgateDTO aprovacao = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
                     .estado(DecisaoAdministrador.APROVADO)
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
                     .build();
@@ -339,7 +339,7 @@ public class ResgateControllerTests {
 
             ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
 
-            AtualizarStatusResgateDTO rejeicao = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO rejeicao = AtualizarStatusTransacaoDTO.builder()
                     .estado(DecisaoAdministrador.RECUSADO)
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
                     .build();
@@ -410,7 +410,7 @@ public class ResgateControllerTests {
 
             ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
 
-            AtualizarStatusResgateDTO aprovacao = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
                     .estado(DecisaoAdministrador.APROVADO)
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
                     .build();
@@ -452,7 +452,7 @@ public class ResgateControllerTests {
 
             ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
 
-            AtualizarStatusResgateDTO aprovacao = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
                     .estado(DecisaoAdministrador.APROVADO)
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
                     .build();
@@ -996,7 +996,7 @@ public class ResgateControllerTests {
             Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.SOLICITADO);
             Long resgateIdValido = resgate.getId();
 
-            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO dto = AtualizarStatusTransacaoDTO.builder()
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
                     .estado(DecisaoAdministrador.APROVADO)
                     .build();
@@ -1040,7 +1040,7 @@ public class ResgateControllerTests {
             Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.SOLICITADO);
             Long resgateIdValido = resgate.getId();
 
-            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO dto = AtualizarStatusTransacaoDTO.builder()
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
                     .estado(DecisaoAdministrador.RECUSADO)
                     .build();
@@ -1070,7 +1070,7 @@ public class ResgateControllerTests {
             Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.SOLICITADO);
             Long resgateIdValido = resgate.getId();
 
-            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO dto = AtualizarStatusTransacaoDTO.builder()
                     .codigoAcesso(CODIGO_ACESSO_INVALIDO)
                     .estado(DecisaoAdministrador.APROVADO)
                     .build();
@@ -1090,7 +1090,7 @@ public class ResgateControllerTests {
         void quandoNaoEncontrarResgate() throws Exception {
             Long resgateIdInvalido = 999L;
 
-            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO dto = AtualizarStatusTransacaoDTO.builder()
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
                     .estado(DecisaoAdministrador.APROVADO)
                     .build();
@@ -1114,7 +1114,7 @@ public class ResgateControllerTests {
             Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.CONFIRMADO);
             Long resgateIdValido = resgate.getId();
 
-            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO dto = AtualizarStatusTransacaoDTO.builder()
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
                     .estado(DecisaoAdministrador.APROVADO)
                     .build();
@@ -1138,7 +1138,7 @@ public class ResgateControllerTests {
             Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.EM_CONTA);
             Long resgateIdValido = resgate.getId();
 
-            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO dto = AtualizarStatusTransacaoDTO.builder()
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
                     .estado(DecisaoAdministrador.APROVADO)
                     .build();
@@ -1165,7 +1165,7 @@ public class ResgateControllerTests {
             // Apaga o Cliente para que ele não seja encontrado
             clienteRepository.deleteAll();
 
-            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO dto = AtualizarStatusTransacaoDTO.builder()
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
                     .estado(DecisaoAdministrador.APROVADO)
                     .build();
@@ -1192,7 +1192,7 @@ public class ResgateControllerTests {
             // Apaga o Ativo para que ele não seja encontrado
             ativoRepository.deleteAll();
 
-            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+            AtualizarStatusTransacaoDTO dto = AtualizarStatusTransacaoDTO.builder()
                     .codigoAcesso(CODIGO_ACESSO_VALIDO)
                     .estado(DecisaoAdministrador.APROVADO)
                     .build();

@@ -2,12 +2,11 @@ package com.ufcg.psoft.commerce.services.resgate;
 
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
-import com.ufcg.psoft.commerce.dtos.resgate.AtualizarStatusResgateDTO;
+import com.ufcg.psoft.commerce.dtos.AtualizarStatusTransacaoDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
 import com.ufcg.psoft.commerce.enums.DecisaoAdministrador;
-import com.ufcg.psoft.commerce.enums.EstadoCompra;
 import com.ufcg.psoft.commerce.enums.EstadoResgate;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.exceptions.*;
@@ -25,7 +24,6 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -82,7 +80,7 @@ public class ResgateServiceImpl implements ResgateService, TransacaoStrategy {
 
     @Override
     @Transactional
-    public ResgateResponseDTO atualizarStatusResgate(Long idResgate, AtualizarStatusResgateDTO dto) {
+    public ResgateResponseDTO atualizarStatusResgate(Long idResgate, AtualizarStatusTransacaoDTO dto) {
         administradorService.validarCodigoAcesso(dto.getCodigoAcesso());
 
         Resgate resgate = resgateRepository.findById(idResgate).orElseThrow(ResgateNaoEncontradoException::new);

@@ -35,6 +35,7 @@ public class ClienteController {
     @Autowired
     TransacaoService transacaoService;
 
+    //US04 - Visualizar cliente
     @GetMapping("/{id}")
     public ResponseEntity<ClienteResponseDTO> recuperarCliente(
             @PathVariable Long id) {
@@ -43,6 +44,7 @@ public class ClienteController {
                 .body(clienteService.recuperar(id));
     }
 
+    //US04 - Visualizar todos os clientes
     @GetMapping("")
     public ResponseEntity<List<ClienteResponseDTO>> listarClientes(
             @RequestParam(required = false, defaultValue = "") String nome) {
@@ -57,6 +59,7 @@ public class ClienteController {
                 .body(clienteService.listar());
     }
 
+    //US04 - Criar cliente
     @PostMapping()
     public ResponseEntity<ClienteResponseDTO> criarCliente(
             @RequestBody @Valid ClientePostPutRequestDTO clientePostPutRequestDto) {
@@ -65,6 +68,7 @@ public class ClienteController {
                 .body(clienteService.criar(clientePostPutRequestDto));
     }
 
+    //US04 - Atualizar cliente
     @PutMapping("/{id}")
     public ResponseEntity<ClienteResponseDTO> atualizarCliente(
             @PathVariable Long id,
@@ -74,6 +78,7 @@ public class ClienteController {
                 .body(clienteService.alterar(id, clientePostPutRequestDto));
     }
 
+    //US04 - Excluir cliente
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> excluirCliente(
             @PathVariable Long id,
@@ -84,6 +89,7 @@ public class ClienteController {
                 .build();
     }
 
+    //US18 - Cliente visualizar todas as suas transações realizadas (com filtros)
     @GetMapping("/{id}/transacoes")
     public ResponseEntity<List<TransacaoResponseDTO>> getTransacoes(
             @PathVariable Long id,
@@ -94,6 +100,7 @@ public class ClienteController {
         return ResponseEntity.ok(transacaoService.listarTransacoes(dto));
     }
 
+    //US20 - Cliente exportar extrato completo de todas suas operações
     @GetMapping("/{idCliente}/extrato")
     public ResponseEntity<InputStreamResource> exportarExtrato(
             @PathVariable Long idCliente,

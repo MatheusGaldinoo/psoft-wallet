@@ -24,6 +24,7 @@ public class AtivoClienteController {
     @Autowired
     private AtivoClienteService ativoClienteService;
 
+    //US06 e US07 - Cliente marcar interesse em ativo disponível ou indisponível
     @PatchMapping("/{idCliente}/ativos/{idAtivo}/interesse")
     public ResponseEntity<Void> marcarInteresse(
             @PathVariable Long idCliente,
@@ -35,12 +36,14 @@ public class AtivoClienteController {
                 .build();
     }
 
+    //US05 - Cliente visualizar ativos disponpiveis para seu plano
     @GetMapping("/{idCliente}/ativos")
     public ResponseEntity<List<AtivoResponseDTO>> listarAtivosDisponiveis(
             @PathVariable Long idCliente) {
         return ResponseEntity.ok(ativoClienteService.listarAtivosDisponiveis(idCliente));
     }
 
+    //US08 - Cliente visualizar ativo
     @GetMapping("/{idCliente}/ativos/{idAtivo}")
     public ResponseEntity<AtivoResponseDTO> visualizarAtivo(
             @PathVariable Long idCliente,

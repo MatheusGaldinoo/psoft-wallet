@@ -4,10 +4,10 @@ import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
-import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
+import com.ufcg.psoft.commerce.dtos.AtualizarStatusTransacaoDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
+import com.ufcg.psoft.commerce.enums.DecisaoAdministrador;
 import com.ufcg.psoft.commerce.enums.EstadoCompra;
-import com.ufcg.psoft.commerce.enums.EstadoResgate;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.exceptions.*;
 import com.ufcg.psoft.commerce.interfaces.transacao.TransacaoStrategy;
@@ -24,10 +24,8 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Locale;
 
 @Service
 public class CompraServiceImpl implements CompraService, TransacaoStrategy {
@@ -115,8 +113,8 @@ public class CompraServiceImpl implements CompraService, TransacaoStrategy {
     }
 
     @Override
-    public CompraResponseDTO aprovarCompra(Long idCompra, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
+    public CompraResponseDTO atualizarStatusCompra(Long idCompra, AtualizarStatusTransacaoDTO dto){
+        administradorService.validarCodigoAcesso(dto.getCodigoAcesso());
 
         // 404 status code if Compra not found
         Compra compra = compraRepository.findById(idCompra).orElseThrow(CompraNaoEncontradaException::new);
@@ -125,31 +123,27 @@ public class CompraServiceImpl implements CompraService, TransacaoStrategy {
         if (compra.getEstadoAtual() != EstadoCompra.SOLICITADO) { throw new CompraNaoPendenteException(); }
 
         ClienteResponseDTO clienteDto = clienteService.recuperar(compra.getIdCliente());
-
-        // 422 status code if credit is not enough to buy asset
-        carteiraService.validarBalancoSuficiente(clienteDto.getId(), compra.getValorTotal());
-
-        compra.modificarEstadoCompra();
-        compra.setDataFinalizacao(LocalDateTime.now());
-
-        compraRepository.save(compra);
-
         AtivoResponseDTO ativoDto = ativoService.recuperar(compra.getIdAtivo());
 
-        Logger.alertUser(clienteDto.getNome(), String.format("Sua compra do ativo '%s' foi aprovada!", ativoDto.getNome()));
+        if (dto.getEstado() == DecisaoAdministrador.APROVADO) {
+            carteiraService.validarBalancoSuficiente(clienteDto.getId(), compra.getValorTotal());
 
-        return modelMapper.map(compra, CompraResponseDTO.class);
-    }
+            compra.modificarEstadoCompra();
+            compra.setDataFinalizacao(LocalDateTime.now());
 
-    @Override
-    public CompraResponseDTO recusarCompra(Long idCompra, String codigoAcesso) {
-        administradorService.validarCodigoAcesso(codigoAcesso);
-        Compra compra = compraRepository.findById(idCompra).orElseThrow(CompraNaoEncontradaException::new);
-        compraRepository.deleteById(idCompra);
-        ClienteResponseDTO clienteDto = clienteService.recuperar(compra.getIdCliente());
-        AtivoResponseDTO ativoDto = ativoService.recuperar(compra.getIdAtivo());
-        Logger.alertUser(clienteDto.getNome(), String.format("Sua compra do ativo '%s' foi recusada!", ativoDto.getNome()));
-        return modelMapper.map(compra, CompraResponseDTO.class);
+            compraRepository.save(compra);
+
+            Logger.alertUser(clienteDto.getNome(), String.format("Sua compra do ativo '%s' foi aprovada!", ativoDto.getNome()));
+
+            return modelMapper.map(compra, CompraResponseDTO.class);
+
+        } else {
+            compraRepository.deleteById(idCompra);
+            compraRepository.flush();
+            Logger.alertUser(clienteDto.getNome(), String.format("Sua compra do ativo '%s' foi recusada!", ativoDto.getNome()));
+            return modelMapper.map(compra, CompraResponseDTO.class);
+        }
+
     }
 
     @Override

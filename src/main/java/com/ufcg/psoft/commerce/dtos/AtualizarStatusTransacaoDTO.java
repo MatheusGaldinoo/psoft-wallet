@@ -1,4 +1,4 @@
-package com.ufcg.psoft.commerce.dtos.resgate;
+package com.ufcg.psoft.commerce.dtos;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ufcg.psoft.commerce.enums.DecisaoAdministrador;
@@ -13,9 +13,9 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AtualizarStatusResgateDTO {
+public class AtualizarStatusTransacaoDTO {
 
-    @JsonProperty("estado_atual")
+    @JsonProperty("decisao")
     @NotNull
     private DecisaoAdministrador estado;
 

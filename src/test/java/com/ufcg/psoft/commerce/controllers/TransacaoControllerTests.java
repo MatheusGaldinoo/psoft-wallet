@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
+import com.ufcg.psoft.commerce.dtos.AtualizarStatusTransacaoDTO;
 import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
@@ -12,6 +13,7 @@ import com.ufcg.psoft.commerce.dtos.extrato.ExportarExtratoDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
+import com.ufcg.psoft.commerce.enums.DecisaoAdministrador;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
 import com.ufcg.psoft.commerce.models.ativo.Ativo;
@@ -294,11 +296,18 @@ public class TransacaoControllerTests {
     }
 
     private void aprovarCompra(Long compraId) throws Exception {
+        AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                .estado(DecisaoAdministrador.APROVADO)
+                .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                .build();
+
+        String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
         driver.perform(
-                        patch(URI_COMPRAS + "/" + compraId + "/aprovar")
-                                .param("codigoAcesso", CODIGO_ACESSO_VALIDO))
-                .andExpect(status().isOk())
-                .andDo(print());
+                        patch(URI_COMPRAS + "/" + compraId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(aprovacaoJson))
+                .andExpect(status().isOk());
     }
 
     private void finalizarCompra(Long clienteId, Long compraId) throws Exception {
