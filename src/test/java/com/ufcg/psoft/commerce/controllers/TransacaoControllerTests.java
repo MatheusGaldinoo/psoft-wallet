@@ -4,24 +4,18 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
-import com.ufcg.psoft.commerce.dtos.ativo.AtivoCotacaoRequestDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
-import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
-import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
-import com.ufcg.psoft.commerce.exceptions.CustomErrorType;
-import com.ufcg.psoft.commerce.exceptions.ErrorHandlingControllerAdvice;
 import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.models.ativo.tipo.Acao;
 import com.ufcg.psoft.commerce.models.ativo.tipo.CriptoMoeda;
 import com.ufcg.psoft.commerce.models.ativo.tipo.TesouroDireto;
-import com.ufcg.psoft.commerce.models.carteira.AtivoCarteira;
 import com.ufcg.psoft.commerce.models.carteira.Carteira;
 import com.ufcg.psoft.commerce.models.transacao.Compra;
 import com.ufcg.psoft.commerce.models.transacao.Resgate;
@@ -34,22 +28,17 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.HashMap;
 import java.util.List;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -153,8 +142,10 @@ public class TransacaoControllerTests {
                     .idAtivo(ativos.get(i).getId())
                     .quantidade(i + 1.0)
                     .precoUnitario(100.0 * (i + 1))
+                    .tipoAtivo(ativos.get(i).getTipo().getNomeTipo())
                     .valorTotal((i + 1.0) * 100.0 * (i + 1))
-                    .dataSolicitacao(LocalDateTime.of(2025, 9, 8, 10 + i, 0))
+                    .dataSolicitacao(LocalDateTime.of(2025, 9, 8, 1 + i, 0))
+                    .dataFinalizacao(LocalDateTime.of(2025, 9, 8, 13 + i, 0))
                     .build();
 
             compras.add(compraRepository.save(compra));
@@ -164,8 +155,10 @@ public class TransacaoControllerTests {
                     .idAtivo(ativos.get(i).getId())
                     .quantidade((i + 1) * 2.0)
                     .precoUnitario(100.0 * (i + 1))
+                    .tipoAtivo(ativos.get(i).getTipo().getNomeTipo())
                     .valorTotal((i + 1) * 200.0)
-                    .dataSolicitacao(LocalDateTime.of(2025, 9, 8, 13 + i, 0))
+                    .dataSolicitacao(LocalDateTime.of(2025, 9, 8, 1 + i, 0))
+                    .dataFinalizacao(LocalDateTime.of(2025, 9, 8, 13 + i, 0))
                     .imposto(10.0)
                     .build();
 
@@ -174,30 +167,43 @@ public class TransacaoControllerTests {
     }
 
     private List<TransacaoResponseDTO> mapTransacoesEsperadas(List<Compra> compras, List<Resgate> resgates) {
-        List<TransacaoResponseDTO> list = new ArrayList<>();
+        List<TransacaoResponseDTO> todasTransacoes = new ArrayList<>();
 
         // Mapeia compras
         for (Compra c : compras) {
-            list.add(TransacaoResponseDTO.builder()
-                    .compra(modelMapper.map(c, CompraResponseDTO.class))
-                    .build());
+            todasTransacoes.add(
+                    TransacaoResponseDTO.builder()
+                            .compra(modelMapper.map(c, CompraResponseDTO.class))
+                            .build()
+            );
         }
 
         // Mapeia resgates
         for (Resgate r : resgates) {
-            list.add(TransacaoResponseDTO.builder()
-                    .resgate(modelMapper.map(r, ResgateResponseDTO.class))
-                    .build());
+            todasTransacoes.add(
+                    TransacaoResponseDTO.builder()
+                            .resgate(modelMapper.map(r, ResgateResponseDTO.class))
+                            .build()
+            );
         }
 
-        // Ordena DESC por data de solicitação
-        // Caso datas sejam iguais, compras aparecem antes de resgates
-        list.sort(Comparator.comparing(
-                (TransacaoResponseDTO t) -> t.getCompra() != null ? t.getCompra().getDataSolicitacao() : t.getResgate().getDataSolicitacao(),
-                Comparator.reverseOrder()
-        ).thenComparing(t -> t.getCompra() != null ? 0 : 1));
+        // Ordena: primeiro resgates DESC por data, depois compras DESC por data
+        todasTransacoes.sort((t1, t2) -> {
+            // Checa se cada transação é resgate ou compra
+            boolean t1Resgate = t1.getResgate() != null;
+            boolean t2Resgate = t2.getResgate() != null;
 
-        return list;
+            if (t1Resgate && !t2Resgate) return -1; // resgates antes
+            if (!t1Resgate && t2Resgate) return 1;  // compras depois
+
+            // Se ambos são do mesmo tipo, ordena por dataSolicitacao DESC
+            LocalDateTime dt1 = t1Resgate ? t1.getResgate().getDataSolicitacao() : t1.getCompra().getDataSolicitacao();
+            LocalDateTime dt2 = t2Resgate ? t2.getResgate().getDataSolicitacao() : t2.getCompra().getDataSolicitacao();
+
+            return dt2.compareTo(dt1); // DESC
+        });
+
+        return todasTransacoes;
     }
 
     private void criarCliente(String nome, TipoPlano tipo) {
@@ -237,21 +243,6 @@ public class TransacaoControllerTests {
                 .statusDisponibilidade(ativo.getStatusDisponibilidade())
                 .build();
         ativosPostPutRequestDTO.add(dto);
-    }
-
-    private void inicializarCarteiraComAtivo(Cliente cliente, Ativo ativo, double quantidade) {
-        if (cliente.getCarteira().getAtivos() == null) {
-            cliente.getCarteira().setAtivos(new HashMap<>());
-        }
-
-        AtivoCarteira ativoCarteira = AtivoCarteira.builder()
-                .quantidade(quantidade)
-                .valorAcumulado(ativo.getValor())
-                .quantidadeAcumulada(quantidade)
-                .build();
-
-        cliente.getCarteira().getAtivos().put(ativo.getId(), ativoCarteira);
-        clienteRepository.save(cliente);
     }
 
     @AfterEach
@@ -622,102 +613,193 @@ public class TransacaoControllerTests {
         @Test
         @DisplayName("Deve retornar uma lista com todas as transações de compra e resgate")
         void listarTodasTransacoes() throws Exception {
-//            criarTransacoes();
-//            String jsonResponse = driver.perform(get(URI_TRANSACOES)
-//                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-//                            .contentType(MediaType.APPLICATION_JSON))
-//                    .andExpect(status().isOk())
-//                    .andDo(print())
-//                    .andReturn().getResponse().getContentAsString();
-//
-//            List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
-//
-//            List<Compra> comprasEsperadas = compras;
-//            List<Resgate> resgatesEsperados = resgates;
-//
-//            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
-//
-//            assertEquals(expected, result);
+            criarTransacoes();
+            String jsonResponse = driver.perform(get(URI_TRANSACOES)
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
+
+            List<Compra> comprasEsperadas = compras;
+            List<Resgate> resgatesEsperados = resgates;
+
+            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
+
+            assertEquals(expected, result);
         }
 
         @Test
         @DisplayName("Deve retornar uma lista de transações filtradas pelo tipoAtivo == TesouroDireto")
         void quandoFiltrarPorTesouroDireto() throws Exception {
-//            criarTransacoes();
-//
-//            String jsonResponse = driver.perform(get(URI_TRANSACOES)
-//                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-//                            .param("tipoAtivo", "TESOURO_DIRETO")
-//                            .contentType(MediaType.APPLICATION_JSON))
-//                    .andExpect(status().isOk())
-//                    .andDo(print())
-//                    .andReturn().getResponse().getContentAsString();
-//
-//            List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
-//
-//            // Filtra compras/resgates que são do tipo TesouroDireto
-//            List<Compra> comprasEsperadas = compras.stream()
-//                    .filter(c -> {
-//                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(c.getIdAtivo())).findFirst().orElse(null);
-//                        return ativo != null && ativo.getTipo() instanceof TesouroDireto;
-//                    })
-//                    .toList();
-//
-//            List<Resgate> resgatesEsperados = resgates.stream()
-//                    .filter(r -> {
-//                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(r.getIdAtivo())).findFirst().orElse(null);
-//                        return ativo != null && ativo.getTipo() instanceof TesouroDireto;
-//                    })
-//                    .toList();
-//
-//            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
-//
-//            assertEquals(expected, result);
+            criarTransacoes();
+
+            String jsonResponse = driver.perform(get(URI_TRANSACOES)
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("tipoAtivo", "TESOURO_DIRETO")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
+
+            // Filtra compras/resgates que são do tipo TesouroDireto
+            List<Compra> comprasEsperadas = compras.stream()
+                    .filter(c -> {
+                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(c.getIdAtivo())).findFirst().orElse(null);
+                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("TESOURO_DIRETO");
+                    })
+                    .toList();
+
+            List<Resgate> resgatesEsperados = resgates.stream()
+                    .filter(r -> {
+                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(r.getIdAtivo())).findFirst().orElse(null);
+                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("TESOURO_DIRETO");
+                    })
+                    .toList();
+
+            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
+
+            assertEquals(expected, result);
         }
 
         @Test
         @DisplayName("Deve retornar uma lista de transações filtradas pelo tipoAtivo == Acao")
         void quandoFiltrarPorAcao() throws Exception {
+            criarTransacoes();
 
+            String jsonResponse = driver.perform(get(URI_TRANSACOES)
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("tipoAtivo", "ACAO")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
+
+            // Filtra compras/resgates que são do tipo Acao
+            List<Compra> comprasEsperadas = compras.stream()
+                    .filter(c -> {
+                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(c.getIdAtivo())).findFirst().orElse(null);
+                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("ACAO");
+                    })
+                    .toList();
+
+            List<Resgate> resgatesEsperados = resgates.stream()
+                    .filter(r -> {
+                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(r.getIdAtivo())).findFirst().orElse(null);
+                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("ACAO");
+                    })
+                    .toList();
+
+            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
+
+            assertEquals(expected, result);
         }
 
         @Test
         @DisplayName("Deve retornar uma lista de transações filtradas pelo tipoAtivo == CriptoMoeda")
         void quandoFiltrarPorCriptomoeda() throws Exception {
+            criarTransacoes();
 
+            String jsonResponse = driver.perform(get(URI_TRANSACOES)
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("tipoAtivo", "CRIPTOMOEDA")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
+
+            // Filtra compras/resgates que são do tipo CriptoMoeda
+            List<Compra> comprasEsperadas = compras.stream()
+                    .filter(c -> {
+                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(c.getIdAtivo())).findFirst().orElse(null);
+                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("CRIPTOMOEDA");
+                    })
+                    .toList();
+
+            List<Resgate> resgatesEsperados = resgates.stream()
+                    .filter(r -> {
+                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(r.getIdAtivo())).findFirst().orElse(null);
+                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals("CRIPTOMOEDA");
+                    })
+                    .toList();
+
+            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
+
+            assertEquals(expected, result);
         }
 
         @Test
         @DisplayName("Deve retornar uma lista de transações filtradas por TipoAtivo")
         void quandoFiltrarDataTime() throws Exception {
+            criarTransacoes();
 
+            LocalDateTime dataInicio = LocalDateTime.of(2025, 9, 7, 5, 0, 0);
+            LocalDateTime dataFim = LocalDateTime.of(2025, 9, 7, 10, 0, 0);
+
+            String jsonResponse = driver.perform(get(URI_TRANSACOES)
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("dataInicio", String.valueOf(dataInicio))
+                            .param("dataFim", String.valueOf(dataInicio))
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
+
+            // Filtra compras e resgates pelo período
+            List<Compra> comprasEsperadas = compras.stream()
+                    .filter(c -> !c.getDataSolicitacao().isBefore(dataInicio) && !c.getDataSolicitacao().isAfter(dataFim))
+                    .toList();
+
+            List<Resgate> resgatesEsperados = resgates.stream()
+                    .filter(r -> !r.getDataSolicitacao().isBefore(dataInicio) && !r.getDataSolicitacao().isAfter(dataFim))
+                    .toList();
+
+            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
+
+            assertEquals(expected, result);
         }
 
         @Test
         @DisplayName("Deve retornar uma lista de transações feitas por um cliente")
         void quandoFiltrarCliente() throws Exception {
-//            criarTransacoes();
-//            Integer indexClient = 1;
-//
-//            Cliente clienteFiltrado = clientes.get(indexClient);
-//
-//            String jsonResponse = driver.perform(get(URI_TRANSACOES)
-//                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
-//                            .param("clientId", String.valueOf(clienteFiltrado.getId()))
-//                            .contentType(MediaType.APPLICATION_JSON))
-//                    .andExpect(status().isOk())
-//                    .andDo(print())
-//                    .andReturn().getResponse().getContentAsString();
-//
-//            List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
-//
-//            List<Compra> comprasEsperadas = List.of(compras.get(indexClient-1));
-//            List<Resgate> resgatesEsperados = List.of(resgates.get(indexClient-1));
-//
-//            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
-//            //List<TransacaoResponseDTO> result = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
-//            assertEquals(expected, result);
+            criarTransacoes();
+
+            Long clientId = clientes.get(3).getId();
+
+            String jsonResponse = driver.perform(get(URI_TRANSACOES)
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("clienteId", String.valueOf(clientId))
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
+
+            // Filtra compras/resgates que pertencem ao clientId
+            List<Compra> comprasEsperadas = compras.stream()
+                    .filter(c -> c.getIdCliente().equals(clientId))
+                    .toList();
+
+            List<Resgate> resgatesEsperados = resgates.stream()
+                    .filter(r -> r.getIdCliente().equals(clientId))
+                    .toList();
+
+            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
+
+            assertEquals(expected, result);
         }
+
 
         @Test
         @DisplayName("Deve retornar uma lista de transações filtradas pelo tipoOperação == compra")
