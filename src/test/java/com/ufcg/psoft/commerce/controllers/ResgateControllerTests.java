@@ -22,7 +22,6 @@ import com.ufcg.psoft.commerce.models.usuario.Administrador;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import com.ufcg.psoft.commerce.repositories.*;
 import org.junit.jupiter.api.*;
-import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,6 +37,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import org.springframework.http.MediaType;
 import com.fasterxml.jackson.core.type.TypeReference;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -73,10 +74,10 @@ public class ResgateControllerTests {
     @Autowired
     AdministradorRepository administradorRepository;
 
-    @Autowired
-    ModelMapper modelMapper;
-
     ObjectMapper objectMapper = new ObjectMapper();
+
+    private final PrintStream originalOut = System.out;
+    private ByteArrayOutputStream outContent;
 
     List<Ativo> ativos;
     List<Cliente> clientes;
@@ -99,6 +100,9 @@ public class ResgateControllerTests {
         ativosPostPutRequestDTO = new ArrayList<>();
 
         objectMapper.registerModule(new JavaTimeModule());
+
+        outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
 
         administradorRepository.save(
                 Administrador.builder()
@@ -204,6 +208,8 @@ public class ResgateControllerTests {
         tipoDeAtivoRepository.deleteAll();
         clienteRepository.deleteAll();
         administradorRepository.deleteAll();
+
+        System.setOut(originalOut);
     }
 
     @Nested
@@ -982,8 +988,8 @@ public class ResgateControllerTests {
     class AtualizarResgate {
 
         @Test
-        @DisplayName("Deve atualizar o status de um resgate para confirmado com sucesso")
-        void atualizaResgate() throws Exception {
+        @DisplayName("Deve atualizar o status de um resgate para confirmado e notificar usuário")
+        void aprovarResgate() throws Exception {
             Cliente cliente = clientes.get(0);
             Ativo ativo = ativos.get(0);
 
@@ -1018,6 +1024,41 @@ public class ResgateControllerTests {
                     .build();
 
             assertEquals(expected, result);
+
+            System.out.flush();
+            String output = outContent.toString();
+            assertTrue(output.contains("Alerta"), "Deve conter 'Alerta' na notificação");
+            assertTrue(output.contains("aprovado"), "Deve conter 'aprovado' na notificação");
+        }
+
+        @Test
+        @DisplayName("Deve lançar exceção, deletar o resgate e notificar usuário")
+        void recusarResgate() throws Exception {
+            Cliente cliente = clientes.get(0);
+            Ativo ativo = ativos.get(0);
+
+            Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.SOLICITADO);
+            Long resgateIdValido = resgate.getId();
+
+            AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .estado(DecisaoAdministrador.RECUSADO)
+                    .build();
+
+            String jsonRequest = objectMapper.writeValueAsString(dto);
+
+            driver.perform(patch(URI_RESGATES + "/" + resgateIdValido)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(jsonRequest))
+                    .andExpect(status().isConflict())
+                    .andDo(print())
+                    .andExpect(jsonPath("$.message", containsString("Resgate rejeitado!")));
+
+            System.out.flush();
+            String output = outContent.toString();
+            assertTrue(output.contains("Alerta"), "Deve conter 'Alerta' na notificação");
+            assertTrue(output.contains("rejeitado"), "Deve conter 'rejeitado' na notificação");
+
         }
 
         @Test
@@ -1148,7 +1189,7 @@ public class ResgateControllerTests {
             Resgate resgate = criarResgate(cliente, ativo, EstadoResgate.SOLICITADO);
             Long resgateIdValido = resgate.getId();
 
-            // Apaga o Cliente para que ele não seja encontrado
+            // Apaga o Ativo para que ele não seja encontrado
             ativoRepository.deleteAll();
 
             AtualizarStatusResgateDTO dto = AtualizarStatusResgateDTO.builder()
