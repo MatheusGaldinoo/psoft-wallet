@@ -11,5 +11,5 @@ public interface TransacaoService {
 
 
     public List<TransacaoResponseDTO> listarTransacoes(TransacaoQueryDTO transacaoQueryDTO);
-
+    String gerarExtratoCSV(Long clienteId, String codigoAcesso);
 }

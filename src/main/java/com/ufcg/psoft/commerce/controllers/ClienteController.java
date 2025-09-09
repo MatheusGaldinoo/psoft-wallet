@@ -10,11 +10,15 @@ import com.ufcg.psoft.commerce.services.cliente.ClienteService;
 import com.ufcg.psoft.commerce.services.transacao.TransacaoService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 @RestController
@@ -87,5 +91,22 @@ public class ClienteController {
         // garante que a busca seja apenas do cliente
         dto.setClienteId(id);
         return ResponseEntity.ok(transacaoService.listarTransacoes(dto));
+    }
+
+    @GetMapping("/{idCliente}/extrato")
+    public ResponseEntity<InputStreamResource> exportarExtrato(
+            @PathVariable Long idCliente,
+            @RequestParam String codigoAcesso
+    ) {
+        String csv = transacaoService.gerarExtratoCSV(idCliente, codigoAcesso);
+
+        InputStreamResource resource = new InputStreamResource(
+                new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8))
+        );
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=extrato_" + idCliente + ".csv")
+                .contentType(MediaType.parseMediaType("text/csv"))
+                .body(resource);
     }
 }
