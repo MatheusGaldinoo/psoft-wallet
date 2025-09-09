@@ -115,19 +115,18 @@ public class ErrorHandlingControllerAdvice {
         return defaultCustomErrorTypeConstruct(e.getMessage());
     }
 
-// TODO: descomentar essas linhas e mudar os códgidos http dos testes
 
-//    @ExceptionHandler(ClienteNaoExisteException.class)
-//    @ResponseStatus(HttpStatus.NOT_FOUND)
-//    @ResponseBody
-//    public CustomErrorType onClienteNaoExisteException(ClienteNaoExisteException e) {
-//        return defaultCustomErrorTypeConstruct(e.getMessage());
-//    }
-//
-//    @ExceptionHandler(AtivoNaoExisteException.class)
-//    @ResponseStatus(HttpStatus.NOT_FOUND)
-//    @ResponseBody
-//    public CustomErrorType onAtivoNaoExisteException(AtivoNaoExisteException e) {
-//        return defaultCustomErrorTypeConstruct(e.getMessage());
-//    }
+    @ExceptionHandler(ClienteNaoExisteException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public CustomErrorType onClienteNaoExisteException(ClienteNaoExisteException e) {
+        return defaultCustomErrorTypeConstruct(e.getMessage());
+    }
+
+    @ExceptionHandler(AtivoNaoExisteException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public CustomErrorType onAtivoNaoExisteException(AtivoNaoExisteException e) {
+        return defaultCustomErrorTypeConstruct(e.getMessage());
+    }
 }

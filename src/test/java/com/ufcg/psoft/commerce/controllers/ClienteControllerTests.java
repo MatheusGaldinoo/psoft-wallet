@@ -543,7 +543,7 @@ public class ClienteControllerTests {
             String responseJsonString = driver.perform(get(URI_CLIENTES + "/" + 999999999)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(clientePostPutRequestDTO)))
-                    .andExpect(status().isBadRequest()) // Codigo 400
+                    .andExpect(status().isNotFound())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
 
@@ -1109,7 +1109,7 @@ public class ClienteControllerTests {
                             .contentType(MediaType.APPLICATION_JSON)
                             .param("codigoAcesso", cliente.getCodigoAcesso())
                             .content(objectMapper.writeValueAsString(clientePostPutRequestDTO)))
-                    .andExpect(status().isBadRequest()) // Codigo 400
+                    .andExpect(status().isNotFound())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
 
@@ -1182,7 +1182,7 @@ public class ClienteControllerTests {
             String responseJsonString = driver.perform(delete(URI_CLIENTES + "/" + 999999)
                             .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest()) // Codigo 400
+                    .andExpect(status().isNotFound())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
 

@@ -250,7 +250,7 @@ public class AtivoControllerTests {
                             put(String.format("/ativos/%s", "999999"))
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content(ativoJson))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print());
         }
     }
@@ -286,7 +286,7 @@ public class AtivoControllerTests {
             driver.perform(delete(String.format("/ativos/%d", 999999))
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(json))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print());
         }
 
@@ -334,7 +334,7 @@ public class AtivoControllerTests {
         @DisplayName("Deve retornar 400 para ativo inexistente")
         void deveRetornar400ParaAtivoInexistente() throws Exception {
             driver.perform(get(URI_ATIVOS + "/999999"))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print());
         }
     }
@@ -441,7 +441,7 @@ public class AtivoControllerTests {
             driver.perform(patch("/ativos/" + 999999 + "/cotacao")
                             .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print())
                     .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
         }
@@ -521,7 +521,7 @@ public class AtivoControllerTests {
             driver.perform(patch("/ativos/" + 999999 + "/status")
                             .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print())
                     .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
         }
