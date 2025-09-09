@@ -4,12 +4,16 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
+import com.ufcg.psoft.commerce.dtos.AtualizarStatusTransacaoDTO;
+import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
+import com.ufcg.psoft.commerce.dtos.extrato.ExportarExtratoDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
+import com.ufcg.psoft.commerce.enums.DecisaoAdministrador;
 import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
 import com.ufcg.psoft.commerce.enums.TipoPlano;
 import com.ufcg.psoft.commerce.models.ativo.Ativo;
@@ -292,11 +296,18 @@ public class TransacaoControllerTests {
     }
 
     private void aprovarCompra(Long compraId) throws Exception {
+        AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                .estado(DecisaoAdministrador.APROVADO)
+                .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                .build();
+
+        String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
         driver.perform(
-                        patch(URI_COMPRAS + "/" + compraId + "/aprovar")
-                                .param("codigoAcesso", CODIGO_ACESSO_VALIDO))
-                .andExpect(status().isOk())
-                .andDo(print());
+                        patch(URI_COMPRAS + "/" + compraId)
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(aprovacaoJson))
+                .andExpect(status().isOk());
     }
 
     private void finalizarCompra(Long clienteId, Long compraId) throws Exception {
@@ -381,8 +392,14 @@ public class TransacaoControllerTests {
     }
 
     private String exportarExtrato(Long clienteId, String codigoAcesso) throws Exception {
+        ExportarExtratoDTO dto = ExportarExtratoDTO.builder()
+                .codigoAcesso(codigoAcesso)
+                .transacoes(listarTransacoes(clienteId))
+                .build();
+        String json = objectMapper.writeValueAsString(dto);
         return driver.perform(get(URI_COMPRAS_CLIENTES + "/" + clienteId + URI_EXTRATO)
-                        .param("codigoAcesso", codigoAcesso))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -488,15 +505,7 @@ public class TransacaoControllerTests {
             inicializarCarteiraComAtivo(cliente, ativo, 5);
             criarResgate(cliente, ativo);
 
-            String csvResponse = driver.perform(get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + URI_EXTRATO)
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
-                    .andExpect(status().isOk())
-                    .andExpect(header().string("Content-Disposition",
-                            containsString("extrato_" + cliente.getId() + ".csv")))
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
+            String csvResponse = exportarExtrato(cliente.getId(), cliente.getCodigoAcesso());
             // Assert
             assertTrue(csvResponse.contains(CABECALHO_CSV));
             assertTrue(csvResponse.contains("COMPRA"));
@@ -601,6 +610,7 @@ public class TransacaoControllerTests {
             // Act
             inicializarCarteiraComAtivo(cliente, ativo, 5);
             criarResgate(cliente, ativo, 3);
+
 
             String csvResponse = exportarExtrato(cliente.getId(), cliente.getCodigoAcesso());
 

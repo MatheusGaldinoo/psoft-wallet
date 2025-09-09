@@ -34,6 +34,7 @@ public class AtivoController {
         return ResponseEntity.ok(ativoService.recuperar(id));
     }
 
+    //US01 - Administrador criar ativo
     @PostMapping
     public ResponseEntity<AtivoResponseDTO> criarAtivo(
             @RequestBody @Valid AtivoPostPutRequestDTO dto) {
@@ -42,6 +43,7 @@ public class AtivoController {
                 .body(ativoService.criar(dto));
     }
 
+    //US01 - Administrador alterar ativo
     @PutMapping("/{id}")
     public ResponseEntity<AtivoResponseDTO> alterarAtivo(
             @PathVariable Long id,
@@ -50,6 +52,7 @@ public class AtivoController {
                 .ok(ativoService.alterar(id, dto));
     }
 
+    //US01 - Administrador remover ativo
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> removerAtivo(
             @PathVariable Long id,
@@ -59,6 +62,7 @@ public class AtivoController {
         return ResponseEntity.noContent().build();
     }
 
+    //US02 - Administrador ativar ou desativar ativo
     @PatchMapping("/{id}/status")
     public ResponseEntity<AtivoResponseDTO> ativarOuDesativar(
             @PathVariable Long id,
@@ -66,6 +70,7 @@ public class AtivoController {
         return ResponseEntity.ok(ativoService.ativarOuDesativar(id, dto.getCodigoAcesso()));
     }
 
+    //US03 - Administrador atualizar valor da cotação do ativo
     @PatchMapping("/{id}/cotacao")
     public ResponseEntity<AtivoResponseDTO> atualizarCotacao(
             @PathVariable Long id,

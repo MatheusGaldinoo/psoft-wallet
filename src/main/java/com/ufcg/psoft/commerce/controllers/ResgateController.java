@@ -1,9 +1,8 @@
 package com.ufcg.psoft.commerce.controllers;
 
-import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
-import com.ufcg.psoft.commerce.dtos.resgate.AtualizarStatusResgateDTO;
+import com.ufcg.psoft.commerce.dtos.AtualizarStatusTransacaoDTO;
 import com.ufcg.psoft.commerce.services.resgate.ResgateService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ public class ResgateController {
     @Autowired
     ResgateService resgateService;
 
-    // US 14 - Solicitar resgate
+    // US14 e US15 - Solicitar resgate e calcular imposto do resgate
     @PostMapping("clientes/{idCliente}/resgate")
     public ResponseEntity<ResgateResponseDTO> solicitarResgate(
             @PathVariable Long idCliente,
@@ -48,7 +47,8 @@ public class ResgateController {
                 resgateService.listarResgatesDoCliente(idCliente, status, periodoInicio, periodoFim)
         );
     }
-  
+
+    //US16 - Executa resgate confirmado
     @PostMapping("/resgates/{idResgate}/executar")
     public ResponseEntity<ResgateResponseDTO> executarResgate(
             @PathVariable Long idResgate,
@@ -61,7 +61,7 @@ public class ResgateController {
     @PatchMapping("/resgates/{idResgate}")
     public ResponseEntity<ResgateResponseDTO> atualizarStatusResgate(
             @PathVariable Long idResgate,
-            @Valid @RequestBody AtualizarStatusResgateDTO dto) {
+            @Valid @RequestBody AtualizarStatusTransacaoDTO dto) {
         return ResponseEntity.ok(resgateService.atualizarStatusResgate(idResgate, dto));
     }
 }

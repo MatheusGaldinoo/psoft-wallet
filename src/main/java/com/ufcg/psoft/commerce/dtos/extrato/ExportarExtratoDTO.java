@@ -1,6 +1,8 @@
-package com.ufcg.psoft.commerce.dtos.resgate;
+package com.ufcg.psoft.commerce.dtos.extrato;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
+import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
 import com.ufcg.psoft.commerce.enums.DecisaoAdministrador;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -9,18 +11,18 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AtualizarStatusResgateDTO {
 
-    @JsonProperty("estado_atual")
+public class ExportarExtratoDTO {
+    @JsonProperty("codigoAcesso")
     @NotNull
-    private DecisaoAdministrador estado;
-
-    @JsonProperty("admin_codigo_acesso")
-    @NotNull(message = "Codigo de acesso obrigatorio")
-    @Pattern(regexp = "^\\d{6}$", message = "Codigo de acesso deve ter exatamente 6 digitos numericos")
     private String codigoAcesso;
+
+    @JsonProperty("transacoes")
+    private List<TransacaoResponseDTO> transacoes;
 }

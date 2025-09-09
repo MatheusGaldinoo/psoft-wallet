@@ -4,13 +4,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
+import com.ufcg.psoft.commerce.dtos.AtualizarStatusTransacaoDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.carteira.AtivoCarteiraResponseDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
-import com.ufcg.psoft.commerce.enums.EstadoCompra;
-import com.ufcg.psoft.commerce.enums.StatusDisponibilidade;
-import com.ufcg.psoft.commerce.enums.TipoPlano;
+import com.ufcg.psoft.commerce.enums.*;
 import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.models.ativo.tipo.Acao;
 import com.ufcg.psoft.commerce.models.ativo.tipo.CriptoMoeda;
@@ -289,12 +288,18 @@ public class CompraControllerTests {
 
             CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
 
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
             driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
+                    .andExpect(status().isOk());
 
             String responseJsonString = driver.perform(
                             get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras"))
@@ -351,12 +356,18 @@ public class CompraControllerTests {
 
             CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
 
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
             driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
+                    .andExpect(status().isOk());
 
             driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraResponseDTOSolicitacao.getId()))
                     .andExpect(status().isOk())
@@ -435,12 +446,18 @@ public class CompraControllerTests {
 
             CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
 
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
             driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
+                    .andExpect(status().isOk());
 
             String responseJsonString = driver.perform(
                             get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras"))
@@ -524,12 +541,18 @@ public class CompraControllerTests {
 
             CompraResponseDTO compraResponseDTODisponivel = objectMapper.readValue(responseJsonStringDisponivel, CompraResponseDTO.class);
 
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
             driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTODisponivel.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
+                            patch(URI_COMPRAS + "/" + compraResponseDTODisponivel.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
+                    .andExpect(status().isOk());
 
             String responseJsonStringSolicitacao = driver.perform(
                             post(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras")
@@ -542,11 +565,10 @@ public class CompraControllerTests {
             CompraResponseDTO compraResponseDTOSolicitacao = objectMapper.readValue(responseJsonStringSolicitacao, CompraResponseDTO.class);
 
             driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
-                    .andExpect(status().isOk())
-                    .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
+                    .andExpect(status().isOk());
 
             driver.perform(patch(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/finalizar/" + compraResponseDTOSolicitacao.getId()))
                     .andExpect(status().isOk())
@@ -630,12 +652,23 @@ public class CompraControllerTests {
             assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
             assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
 
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
             String responseJsonStringAprovacao = driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
                     .andExpect(status().isOk())
                     .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
+                    .andExpect(jsonPath("$.estadoAtual").value(EstadoCompra.DISPONIVEL.name()))
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
 
             CompraResponseDTO compraResponseDTOAprovacao = objectMapper.readValue(responseJsonStringAprovacao, CompraResponseDTO.class);
 
@@ -675,9 +708,17 @@ public class CompraControllerTests {
             assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
             assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
 
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .codigoAcesso(CODIGO_ACESSO_INVALIDO)
+                    .build();
+
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
             driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "000000"))
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
                     .andExpect(status().isBadRequest());
 
         }
@@ -741,14 +782,23 @@ public class CompraControllerTests {
             assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
             assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
 
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
             driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
                     .andExpect(status().isOk());
 
             driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
                     .andExpect(status().isForbidden());
 
         }
@@ -782,9 +832,17 @@ public class CompraControllerTests {
             cliente.getCarteira().setBalanco(0);
             clienteRepository.save(cliente);
 
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                    .estado(DecisaoAdministrador.APROVADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
             driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/aprovar")
-                                    .param("codigoAcesso", "123456"))
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
                     .andExpect(status().isUnprocessableEntity());
 
         }
@@ -837,12 +895,23 @@ public class CompraControllerTests {
             assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
             assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
 
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                    .estado(DecisaoAdministrador.RECUSADO)
+                    .codigoAcesso(CODIGO_ACESSO_VALIDO)
+                    .build();
+
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
             String responseJsonStringAprovacao = driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/recusar")
-                                    .param("codigoAcesso", "123456"))
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
                     .andExpect(status().isOk())
                     .andDo(print())
-                    .andReturn().getResponse().getContentAsString();
+                    .andExpect(jsonPath("$.estadoAtual").value(EstadoCompra.SOLICITADO.name()))
+                    .andReturn()
+                    .getResponse()
+                    .getContentAsString();
 
             CompraResponseDTO compraResponseDTOAprovacao = objectMapper.readValue(responseJsonStringAprovacao, CompraResponseDTO.class);
 
@@ -882,9 +951,17 @@ public class CompraControllerTests {
             assertEquals(EstadoCompra.SOLICITADO, compraResponseDTOSolicitacao.getEstado());
             assertEquals(2.0, compraResponseDTOSolicitacao.getValorTotal());
 
+            AtualizarStatusTransacaoDTO aprovacao = AtualizarStatusTransacaoDTO.builder()
+                    .estado(DecisaoAdministrador.RECUSADO)
+                    .codigoAcesso("000000")
+                    .build();
+
+            String aprovacaoJson = objectMapper.writeValueAsString(aprovacao);
+
             driver.perform(
-                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId() + "/recusar")
-                                    .param("codigoAcesso", "000000"))
+                            patch(URI_COMPRAS + "/" + compraResponseDTOSolicitacao.getId())
+                                    .contentType(MediaType.APPLICATION_JSON)
+                                    .content(aprovacaoJson))
                     .andExpect(status().isBadRequest());
 
         }

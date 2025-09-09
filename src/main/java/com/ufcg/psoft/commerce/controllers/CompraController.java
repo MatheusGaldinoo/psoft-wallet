@@ -3,6 +3,7 @@ package com.ufcg.psoft.commerce.controllers;
 import com.ufcg.psoft.commerce.dtos.carteira.AtivoCarteiraResponseDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
+import com.ufcg.psoft.commerce.dtos.AtualizarStatusTransacaoDTO;
 import com.ufcg.psoft.commerce.services.carteira.CarteiraService;
 import com.ufcg.psoft.commerce.services.compra.CompraService;
 import jakarta.validation.Valid;
@@ -28,37 +29,33 @@ public class CompraController {
     @Autowired
     ModelMapper modelMapper;
 
-    // US09
+    // US09 - Cliente solicita compra de ativo
     @PostMapping("/clientes/{idCliente}/compras")
     public ResponseEntity<CompraResponseDTO> solicitarCompra(@PathVariable Long idCliente, @Valid @RequestBody CompraPostPutRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(compraService.solicitarCompra(idCliente, dto));
     }
 
-    // US10
+    // US10 - Cliente acompanha status de cada compra realizada
     @GetMapping("/clientes/{idCliente}/compras")
     public ResponseEntity<List<CompraResponseDTO>> listarComprasDoCliente(@PathVariable Long idCliente) {
         return ResponseEntity.status(HttpStatus.OK).body(compraService.listarComprasDoCliente(idCliente));
     }
 
-    // US11
-    @PatchMapping("/compras/{idCompra}/aprovar")
-    public ResponseEntity<CompraResponseDTO> aprovarCompra(@PathVariable Long idCompra, @RequestParam String codigoAcesso) {
-        return ResponseEntity.status(HttpStatus.OK).body(compraService.aprovarCompra(idCompra, codigoAcesso));
+    // US11 - Administrador confirma ou não a solicitação de uma compra
+    @PatchMapping("/compras/{idCompra}")
+    public ResponseEntity<CompraResponseDTO> atualizarStatusCompra(
+            @PathVariable Long idCompra,
+            @Valid @RequestBody AtualizarStatusTransacaoDTO dto) {
+        return ResponseEntity.ok(compraService.atualizarStatusCompra(idCompra, dto));
     }
 
-    // US11
-    @PatchMapping("/compras/{idCompra}/recusar")
-    public ResponseEntity<CompraResponseDTO> recusarCompra(@PathVariable Long idCompra, @RequestParam String codigoAcesso) {
-        return ResponseEntity.status(HttpStatus.OK).body(compraService.recusarCompra(idCompra, codigoAcesso));
-    }
-
-    // US12
+    // US12 - Cliente confirma compra disponível
     @PatchMapping("/clientes/{idCliente}/finalizar/{idCompra}")
     public ResponseEntity<CompraResponseDTO> realizarCompra(@PathVariable Long idCliente, @PathVariable Long idCompra) {
         return ResponseEntity.status(HttpStatus.OK).body(compraService.executarCompra(idCliente, idCompra));
     }
 
-    // US13
+    // US13 - Cliente visualiza carteira de investimentos
     @GetMapping("/clientes/{idCliente}/carteira")
     public ResponseEntity<List<AtivoCarteiraResponseDTO>> visualizarCarteiraDoCliente(@PathVariable Long idCliente) {
         return ResponseEntity.status(HttpStatus.OK).body(carteiraService.visualizarCarteira(idCliente));
