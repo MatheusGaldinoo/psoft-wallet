@@ -29,7 +29,7 @@ public class CompraController {
     ModelMapper modelMapper;
 
     // US09
-    @PostMapping("/clientes/{idCliente}/solicitar")
+    @PostMapping("/clientes/{idCliente}/compra")
     public ResponseEntity<CompraResponseDTO> solicitarCompra(@PathVariable Long idCliente, @Valid @RequestBody CompraPostPutRequestDTO dto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(compraService.solicitarCompra(idCliente, dto));
     }
