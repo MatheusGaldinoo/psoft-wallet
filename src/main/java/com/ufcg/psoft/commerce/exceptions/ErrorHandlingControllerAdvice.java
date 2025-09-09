@@ -108,6 +108,13 @@ public class ErrorHandlingControllerAdvice {
         return defaultCustomErrorTypeConstruct(e.getMessage());
     }
 
+    @ExceptionHandler(ResgateRejeitadoException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    @ResponseBody
+    public CustomErrorType onResgateRejeitadoException(ResgateRejeitadoException e) {
+        return defaultCustomErrorTypeConstruct(e.getMessage());
+    }
+
 // TODO: descomentar essas linhas e mudar os códgidos http dos testes
 
 //    @ExceptionHandler(ClienteNaoExisteException.class)
