@@ -35,7 +35,7 @@ public class CompraController {
     }
 
     // US10
-    @GetMapping("/clientes/{idCliente}/acompanhar-status")
+    @GetMapping("/clientes/{idCliente}/compras")
     public ResponseEntity<List<CompraResponseDTO>> listarComprasDoCliente(@PathVariable Long idCliente) {
         return ResponseEntity.status(HttpStatus.OK).body(compraService.listarComprasDoCliente(idCliente));
     }

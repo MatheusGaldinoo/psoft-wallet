@@ -181,7 +181,7 @@ public class CompraControllerTests {
             Cliente cliente = clientes.get(0);
 
             String responseJsonString = driver.perform(
-                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/acompanhar-status"))
+                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras"))
                     .andExpect(status().isOk())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -235,7 +235,7 @@ public class CompraControllerTests {
                     .andReturn().getResponse().getContentAsString();
 
             String responseJsonString = driver.perform(
-                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/acompanhar-status"))
+                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras"))
                     .andExpect(status().isOk())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -297,7 +297,7 @@ public class CompraControllerTests {
                     .andReturn().getResponse().getContentAsString();
 
             String responseJsonString = driver.perform(
-                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/acompanhar-status"))
+                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras"))
                     .andExpect(status().isOk())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -363,7 +363,7 @@ public class CompraControllerTests {
                     .andDo(print());
 
             String responseJsonString = driver.perform(
-                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/acompanhar-status"))
+                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras"))
                     .andExpect(status().isOk())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -443,7 +443,7 @@ public class CompraControllerTests {
                     .andReturn().getResponse().getContentAsString();
 
             String responseJsonString = driver.perform(
-                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/acompanhar-status"))
+                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras"))
                     .andExpect(status().isOk())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -553,7 +553,7 @@ public class CompraControllerTests {
                     .andDo(print());
 
             String responseJsonString = driver.perform(
-                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/acompanhar-status"))
+                            get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + "/compras"))
                     .andExpect(status().isOk())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
