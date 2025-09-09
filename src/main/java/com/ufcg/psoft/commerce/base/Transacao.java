@@ -3,6 +3,7 @@ package com.ufcg.psoft.commerce.base;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.models.transacao.*;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
@@ -63,5 +64,9 @@ public abstract class Transacao {
 
     @JsonProperty("data_finalizacao")
     private LocalDateTime dataFinalizacao;
+
+    @Enumerated(EnumType.STRING)
+    @JsonProperty("tipoAtivo")
+    private TipoAtivo tipoAtivo;
 
 }

@@ -1,7 +1,9 @@
 package com.ufcg.psoft.commerce.exceptions;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
-public class QuantidadeInsuficienteException extends RuntimeException {
-    // TODO - Adicionar no ErrorHandler para retornar o erro correto
+@ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+public class QuantidadeInsuficienteException extends CommerceException {
     public QuantidadeInsuficienteException() {
         super("Quantidade do ativo insuficiente para o resgate!");
     }

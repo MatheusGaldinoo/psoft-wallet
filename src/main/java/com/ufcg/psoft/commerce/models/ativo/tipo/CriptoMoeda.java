@@ -22,7 +22,7 @@ public class CriptoMoeda extends TipoDeAtivo{
     @Override
     public double calcularImposto(double lucro){
 
-        if (lucro <= 5.000) return lucro * 0.15;
+        if (lucro <= 5000) return lucro * 0.15;
 
         return lucro * 0.225;
     }

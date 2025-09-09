@@ -5,9 +5,13 @@ import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.AtualizarStatusResgateDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
+import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
 import com.ufcg.psoft.commerce.enums.DecisaoAdministrador;
+import com.ufcg.psoft.commerce.enums.EstadoCompra;
 import com.ufcg.psoft.commerce.enums.EstadoResgate;
+import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.exceptions.*;
+import com.ufcg.psoft.commerce.interfaces.transacao.TransacaoStrategy;
 import com.ufcg.psoft.commerce.loggers.Logger;
 import com.ufcg.psoft.commerce.models.transacao.Resgate;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
@@ -21,11 +25,12 @@ import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-public class ResgateServiceImpl implements ResgateService {
+public class ResgateServiceImpl implements ResgateService, TransacaoStrategy {
 
     @Autowired
     ResgateRepository resgateRepository;
@@ -65,6 +70,7 @@ public class ResgateServiceImpl implements ResgateService {
                 .imposto(imposto)
                 .valorTotal(ativo.getValor() * dto.getQuantidade())
                 .dataSolicitacao(LocalDateTime.now())
+                .tipoAtivo(ativo.getTipo())
                 .build();
 
         resgateRepository.save(resgate);
@@ -148,8 +154,17 @@ public class ResgateServiceImpl implements ResgateService {
 
     // Todos atributos aqui são filtros da última US
     @Override
-    public List<ResgateResponseDTO> listarResgates(Long clienteId, String status, String periodoInicio, String periodoFim) {
-        return List.of();
+    public List<TransacaoResponseDTO> listarAllItens(Long clienteId, TipoAtivo tipoAtivo, String statusCompra, String statusResgate, LocalDateTime dataInicio, LocalDateTime dataFim) {
+
+        EstadoResgate estadoResgate = statusResgate == null ? null : EstadoResgate.valueOf(statusResgate.toUpperCase());
+        List<Resgate> resgates = resgateRepository.findAllResgates(clienteId, tipoAtivo, estadoResgate, dataInicio, dataFim);
+        return resgates.stream()
+                .map(resgate -> {
+                    ResgateResponseDTO resgateDTO = modelMapper.map(resgate, ResgateResponseDTO.class);
+                    TransacaoResponseDTO transacaoDTO = new TransacaoResponseDTO();
+                    transacaoDTO.setResgate(resgateDTO);
+                    return transacaoDTO;
+                }).toList();
     }
 
     @Override
