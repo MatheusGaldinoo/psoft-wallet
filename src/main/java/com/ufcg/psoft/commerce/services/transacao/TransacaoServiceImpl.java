@@ -1,6 +1,8 @@
 package com.ufcg.psoft.commerce.services.transacao;
 
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
+import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
+import com.ufcg.psoft.commerce.dtos.extrato.ExportarExtratoDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoQueryDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
 import com.ufcg.psoft.commerce.enums.TipoAtivo;
@@ -75,12 +77,12 @@ public class TransacaoServiceImpl implements TransacaoService{
 
 
     @Override
-    public String gerarExtratoCSV(Long clienteId, String codigoAcesso) {
-        clienteService.validarCodigoAcesso(clienteId, codigoAcesso);
+    public String gerarExtratoCSV(Long clienteId, ExportarExtratoDTO dto) {
+        clienteService.validarCodigoAcesso(clienteId, dto.getCodigoAcesso());
 
         TransacaoQueryDTO query = new TransacaoQueryDTO();
         query.setClienteId(clienteId);
-        query.setCodigoAcesso(codigoAcesso);
+        query.setCodigoAcesso(dto.getCodigoAcesso());
 
         List<TransacaoResponseDTO> transacoes = listarTransacoes(query);
 
@@ -89,7 +91,7 @@ public class TransacaoServiceImpl implements TransacaoService{
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
-        for (TransacaoResponseDTO t : transacoes) {
+        for (TransacaoResponseDTO t : dto.getTransacoes()) {
             if (t.getCompra() != null) {
                 double valorTotal = 0.0;
                 try {

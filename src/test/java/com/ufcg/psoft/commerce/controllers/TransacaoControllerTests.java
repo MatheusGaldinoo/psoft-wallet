@@ -4,9 +4,11 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
+import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;
+import com.ufcg.psoft.commerce.dtos.extrato.ExportarExtratoDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgatePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
@@ -381,8 +383,14 @@ public class TransacaoControllerTests {
     }
 
     private String exportarExtrato(Long clienteId, String codigoAcesso) throws Exception {
+        ExportarExtratoDTO dto = ExportarExtratoDTO.builder()
+                .codigoAcesso(codigoAcesso)
+                .transacoes(listarTransacoes(clienteId))
+                .build();
+        String json = objectMapper.writeValueAsString(dto);
         return driver.perform(get(URI_COMPRAS_CLIENTES + "/" + clienteId + URI_EXTRATO)
-                        .param("codigoAcesso", codigoAcesso))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse()
@@ -488,15 +496,7 @@ public class TransacaoControllerTests {
             inicializarCarteiraComAtivo(cliente, ativo, 5);
             criarResgate(cliente, ativo);
 
-            String csvResponse = driver.perform(get(URI_COMPRAS_CLIENTES + "/" + cliente.getId() + URI_EXTRATO)
-                            .param("codigoAcesso", cliente.getCodigoAcesso()))
-                    .andExpect(status().isOk())
-                    .andExpect(header().string("Content-Disposition",
-                            containsString("extrato_" + cliente.getId() + ".csv")))
-                    .andReturn()
-                    .getResponse()
-                    .getContentAsString();
-
+            String csvResponse = exportarExtrato(cliente.getId(), cliente.getCodigoAcesso());
             // Assert
             assertTrue(csvResponse.contains(CABECALHO_CSV));
             assertTrue(csvResponse.contains("COMPRA"));
@@ -601,6 +601,7 @@ public class TransacaoControllerTests {
             // Act
             inicializarCarteiraComAtivo(cliente, ativo, 5);
             criarResgate(cliente, ativo, 3);
+
 
             String csvResponse = exportarExtrato(cliente.getId(), cliente.getCodigoAcesso());
 

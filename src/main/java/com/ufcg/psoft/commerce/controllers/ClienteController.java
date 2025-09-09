@@ -4,6 +4,7 @@ import com.electronwill.nightconfig.core.conversion.Path;
 import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClientePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;
+import com.ufcg.psoft.commerce.dtos.extrato.ExportarExtratoDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoQueryDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
 import com.ufcg.psoft.commerce.services.cliente.ClienteService;
@@ -96,9 +97,9 @@ public class ClienteController {
     @GetMapping("/{idCliente}/extrato")
     public ResponseEntity<InputStreamResource> exportarExtrato(
             @PathVariable Long idCliente,
-            @RequestParam String codigoAcesso
+            @RequestBody @Valid ExportarExtratoDTO dto
     ) {
-        String csv = transacaoService.gerarExtratoCSV(idCliente, codigoAcesso);
+        String csv = transacaoService.gerarExtratoCSV(idCliente, dto);
 
         InputStreamResource resource = new InputStreamResource(
                 new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8))
