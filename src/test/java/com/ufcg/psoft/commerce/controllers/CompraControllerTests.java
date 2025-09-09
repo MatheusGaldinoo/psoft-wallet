@@ -1073,7 +1073,7 @@ public class CompraControllerTests {
         void quandoCarteiraPossuiAtivos() throws Exception {
             Long idCliente = clientes.get(0).getId();
 
-            String responseJsonString = driver.perform(get("/clientes/" + idCliente + "/visualizar-carteira"))
+            String responseJsonString = driver.perform(get("/clientes/" + idCliente + "/carteira"))
                     .andExpect(status().isOk())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -1113,7 +1113,7 @@ public class CompraControllerTests {
             clientes.get(1).setCarteira(carteiraVazia);
             clienteRepository.save(clientes.get(1));
 
-            String responseJsonString = driver.perform(get("/clientes/" + idCliente + "/visualizar-carteira"))
+            String responseJsonString = driver.perform(get("/clientes/" + idCliente + "/carteira"))
                     .andExpect(status().isOk())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
@@ -1130,7 +1130,7 @@ public class CompraControllerTests {
         void quandoClienteNaoExiste() throws Exception {
             Long idCliente = 99999L;
 
-            driver.perform(get("/clientes/" + idCliente + "/visualizar-carteira"))
+            driver.perform(get("/clientes/" + idCliente + "/carteira"))
                     .andExpect(status().isBadRequest())
                     .andDo(print());
         }

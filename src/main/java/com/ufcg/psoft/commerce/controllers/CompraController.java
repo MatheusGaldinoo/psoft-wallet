@@ -59,7 +59,7 @@ public class CompraController {
     }
 
     // US13
-    @GetMapping("/clientes/{idCliente}/visualizar-carteira")
+    @GetMapping("/clientes/{idCliente}/carteira")
     public ResponseEntity<List<AtivoCarteiraResponseDTO>> visualizarCarteiraDoCliente(@PathVariable Long idCliente) {
         return ResponseEntity.status(HttpStatus.OK).body(carteiraService.visualizarCarteira(idCliente));
     }
