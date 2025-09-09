@@ -42,8 +42,6 @@ public class AtivoControllerTests {
 
     final String URI_BASE = "/ativos";
     final String URI_ATIVOS = "/ativos";
-    final String CODIGO_ACESSO_VALIDO = "123456";
-    final String CODIGO_ACESSO_INVALIDO = "000000";
 
     @Autowired
     MockMvc driver;

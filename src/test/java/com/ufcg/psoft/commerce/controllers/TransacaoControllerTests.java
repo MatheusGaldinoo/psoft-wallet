@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.dtos.AtualizarStatusTransacaoDTO;
-import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraPostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.compra.CompraResponseDTO;

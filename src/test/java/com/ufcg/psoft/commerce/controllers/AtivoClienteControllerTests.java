@@ -37,7 +37,6 @@ import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hamcrest.Matchers.containsString;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -52,7 +51,6 @@ public class AtivoClienteControllerTests {
     private static final String URI_CLIENTES = "/usuarios";
     private static final String URI_ATIVOS = "/ativos";
     private static final String CODIGO_ACESSO_VALIDO = "123456";
-    private static final String CODIGO_ACESSO_INVALIDO = "000000";
     private static final String ENDERECO_PADRAO = "Avenida Paris, 5987, Campina Grande - PB";
     private static final String CODIGO_ACESSO_CLIENTE = "12345";
 

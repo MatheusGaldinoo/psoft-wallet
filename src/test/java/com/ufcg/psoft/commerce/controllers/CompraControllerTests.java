@@ -20,7 +20,6 @@ import com.ufcg.psoft.commerce.models.transacao.Compra;
 import com.ufcg.psoft.commerce.models.usuario.Administrador;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
 import com.ufcg.psoft.commerce.repositories.*;
-import com.ufcg.psoft.commerce.services.ativo.AtivoService;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.*;
 import org.modelmapper.ModelMapper;
