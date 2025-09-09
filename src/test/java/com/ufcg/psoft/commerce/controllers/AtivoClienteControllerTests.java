@@ -375,7 +375,7 @@ public class AtivoClienteControllerTests {
                                     .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
                                     .contentType(MediaType.APPLICATION_JSON)
                                     .content("{}"))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
 
@@ -727,7 +727,7 @@ public class AtivoClienteControllerTests {
                             "/ativos/" + 11)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(ativoPostPutRequestDTO)))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print())
                     .andReturn().getResponse().getContentAsString();
 

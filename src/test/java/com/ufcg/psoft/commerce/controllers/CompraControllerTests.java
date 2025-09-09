@@ -1256,7 +1256,7 @@ public class CompraControllerTests {
             driver.perform(post("/clientes/" + idCliente + "/compras")
                             .content(json)
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print())
                     .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
         }

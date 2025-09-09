@@ -122,11 +122,11 @@ public class ErrorHandlingControllerAdvice {
     public CustomErrorType onClienteNaoExisteException(ClienteNaoExisteException e) {
         return defaultCustomErrorTypeConstruct(e.getMessage());
     }
-//
-//    @ExceptionHandler(AtivoNaoExisteException.class)
-//    @ResponseStatus(HttpStatus.NOT_FOUND)
-//    @ResponseBody
-//    public CustomErrorType onAtivoNaoExisteException(AtivoNaoExisteException e) {
-//        return defaultCustomErrorTypeConstruct(e.getMessage());
-//    }
+
+    @ExceptionHandler(AtivoNaoExisteException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ResponseBody
+    public CustomErrorType onAtivoNaoExisteException(AtivoNaoExisteException e) {
+        return defaultCustomErrorTypeConstruct(e.getMessage());
+    }
 }

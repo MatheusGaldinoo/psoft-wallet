@@ -631,7 +631,7 @@ public class ResgateControllerTests {
             driver.perform(post("/clientes/" + idClienteValido + "/resgate")
                             .content(jsonRequest)
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print())
                     .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
         }
@@ -1202,7 +1202,7 @@ public class ResgateControllerTests {
             driver.perform(patch(URI_RESGATES + "/" + resgateIdValido)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(jsonRequest))
-                    .andExpect(status().isBadRequest())
+                    .andExpect(status().isNotFound())
                     .andDo(print())
                     .andExpect(jsonPath("$.message", containsString("O ativo consultado nao existe!")));
         }
