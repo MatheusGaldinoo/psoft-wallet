@@ -1,29 +1,21 @@
 package com.ufcg.psoft.commerce.services.carteira;
 
-import com.ufcg.psoft.commerce.base.TipoDeAtivo;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoResponseDTO;
 import com.ufcg.psoft.commerce.dtos.carteira.AtivoCarteiraResponseDTO;
-import com.ufcg.psoft.commerce.enums.TipoAtivo;
 import com.ufcg.psoft.commerce.exceptions.BalancoInsuficienteException;
-import com.ufcg.psoft.commerce.exceptions.AtivoNaoExisteException;
 import com.ufcg.psoft.commerce.exceptions.QuantidadeInsuficienteException;
 import com.ufcg.psoft.commerce.models.ativo.Ativo;
 import com.ufcg.psoft.commerce.models.carteira.AtivoCarteira;
 import com.ufcg.psoft.commerce.models.carteira.Carteira;
-import com.ufcg.psoft.commerce.models.transacao.Resgate;
 import com.ufcg.psoft.commerce.models.usuario.Cliente;
-import com.ufcg.psoft.commerce.repositories.AtivoRepository;
-import com.ufcg.psoft.commerce.repositories.ResgateRepository;
 import com.ufcg.psoft.commerce.services.ativo.AtivoService;
 import com.ufcg.psoft.commerce.services.cliente.ClienteService;
-import com.ufcg.psoft.commerce.services.resgate.ResgateService;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -108,7 +100,6 @@ public class CarteiraServiceImpl implements CarteiraService {
 
 
     private double calcularImpostoTipoAtivo(Ativo ativo, double lucro) {
-        // TODO - Adicionar a quantidadeAcumulada no AtivoCarteiraResponseDTO e imposto no ResgateResponseDTO.
         if (lucro <= 0) return 0.0;
 
         return ativo.getTipo().calcularImposto(lucro);

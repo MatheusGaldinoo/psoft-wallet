@@ -1,6 +1,5 @@
 package com.ufcg.psoft.commerce.controllers;
 
-import com.electronwill.nightconfig.core.conversion.Path;
 import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClientePostPutRequestDTO;
 import com.ufcg.psoft.commerce.dtos.cliente.ClienteResponseDTO;

@@ -1,7 +1,6 @@
 package com.ufcg.psoft.commerce.dtos.resgate;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.ufcg.psoft.commerce.enums.EstadoCompra;
 import com.ufcg.psoft.commerce.enums.EstadoResgate;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

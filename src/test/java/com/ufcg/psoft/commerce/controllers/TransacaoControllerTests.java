@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.ufcg.psoft.commerce.base.TipoDeAtivo;
+import com.ufcg.psoft.commerce.base.Transacao;
 import com.ufcg.psoft.commerce.dtos.AtualizarStatusTransacaoDTO;
 import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
 import com.ufcg.psoft.commerce.dtos.ativo.AtivoPostPutRequestDTO;
@@ -312,7 +313,7 @@ public class TransacaoControllerTests {
 
     private void finalizarCompra(Long clienteId, Long compraId) throws Exception {
         driver.perform(
-                        patch(URI_COMPRAS_CLIENTES + "/" + clienteId + "/finalizar/" + compraId)
+                        patch(URI_COMPRAS_CLIENTES + "/" + clienteId + "/" + compraId)
                                 .param("codigoAcesso", CODIGO_ACESSO_VALIDO))
                 .andExpect(status().isOk())
                 .andDo(print());
@@ -478,7 +479,7 @@ public class TransacaoControllerTests {
             // Act
             criarEProcessarCompraCompleta(cliente, ativo);
             CompraResponseDTO compra2 = criarCompra(cliente, ativo);
-            LocalDateTime dataConsulta = compra2.getDataSolicitacao();
+            LocalDateTime dataConsulta = compra2.getDataSolicitacao().withSecond(0).withNano(0);;
             criarResgate(cliente, ativo);
 
             List<TransacaoResponseDTO> transacoesPorPeriodo = listarTransacoesPorPeriodo(
@@ -837,6 +838,33 @@ public class TransacaoControllerTests {
         }
 
         @Test
+        @DisplayName("Deve retornar uma lista de transações de criptomoedas feitas por um cliente ")
+        void multiplosFiltros() throws Exception {
+            // Arrange
+            criarTransacoes();
+            Long clientId = clientes.get(3).getId();
+
+            // Act
+            String jsonResponse = driver.perform(get(URI_TRANSACOES)
+                            .param("codigoAcesso", CODIGO_ACESSO_VALIDO)
+                            .param("clienteId", String.valueOf(clientId))
+                            .param("tipoAtivo", "CRIPTOMOEDA")
+                            .contentType(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isOk())
+                    .andDo(print())
+                    .andReturn().getResponse().getContentAsString();
+
+            List<TransacaoResponseDTO> result = objectMapper.readValue(jsonResponse, new TypeReference<List<TransacaoResponseDTO>>() {});
+
+            // Assert
+            List<Compra> comprasEsperadas = filtrarListaCPorTipoAtivo("CRIPTOMOEDA", filtrarComprasPorCliente(clientId));
+            List<Resgate> resgatesEsperados = filtrarListaRPorTipoAtivo("CRIPTOMOEDA", filtrarResgatesPorCliente(clientId));
+            List<TransacaoResponseDTO> expected = mapTransacoesEsperadas(comprasEsperadas, resgatesEsperados);
+
+            assertEquals(expected, result);
+        }
+
+        @Test
         @DisplayName("Deve retornar uma lista de transações filtradas pelo tipoOperação == compra")
         void quandoFiltrarPorCompra() throws Exception {
             // Arrange
@@ -922,5 +950,24 @@ public class TransacaoControllerTests {
                     .filter(r -> r.getIdCliente().equals(clienteId))
                     .toList();
         }
+
+        private List<Compra> filtrarListaCPorTipoAtivo(String tipoAtivo, List<Compra> transacoes) {
+            return transacoes.stream()
+                    .filter(t -> {
+                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(t.getIdAtivo())).findFirst().orElse(null);
+                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals(tipoAtivo);
+                    })
+                    .toList();
+        }
+
+        private List<Resgate> filtrarListaRPorTipoAtivo(String tipoAtivo, List<Resgate> transacoes) {
+            return transacoes.stream()
+                    .filter(t -> {
+                        Ativo ativo = ativos.stream().filter(a -> a.getId().equals(t.getIdAtivo())).findFirst().orElse(null);
+                        return ativo != null && ativo.getTipo().getNomeTipo().name().equals(tipoAtivo);
+                    })
+                    .toList();
+        }
+
     }
 }

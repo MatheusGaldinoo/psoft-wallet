@@ -1,20 +1,14 @@
 package com.ufcg.psoft.commerce.controllers;
 
-import com.ufcg.psoft.commerce.dtos.CodigoAcessoDTO;
-import com.ufcg.psoft.commerce.dtos.resgate.ResgateResponseDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoQueryDTO;
 import com.ufcg.psoft.commerce.dtos.transacao.TransacaoResponseDTO;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
 import com.ufcg.psoft.commerce.services.transacao.TransacaoService;
-import com.ufcg.psoft.commerce.services.transacao.TransacaoServiceImpl;
 import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 
 @RestController

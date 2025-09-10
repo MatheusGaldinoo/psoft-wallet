@@ -13,20 +13,13 @@ import com.ufcg.psoft.commerce.exceptions.CotacaoNaoPodeSerAtualizadaException;
 import com.ufcg.psoft.commerce.exceptions.VariacaoMinimaDeCotacaoNaoAtingidaException;
 import com.ufcg.psoft.commerce.loggers.Logger;
 import com.ufcg.psoft.commerce.models.ativo.Ativo;
-import com.ufcg.psoft.commerce.models.ativo.tipo.Acao;
-import com.ufcg.psoft.commerce.models.ativo.tipo.CriptoMoeda;
-import com.ufcg.psoft.commerce.models.ativo.tipo.TesouroDireto;
 import com.ufcg.psoft.commerce.repositories.AtivoRepository;
 import com.ufcg.psoft.commerce.repositories.TipoDeAtivoRepository;
 import com.ufcg.psoft.commerce.services.administrador.AdministradorService;
-
 import com.ufcg.psoft.commerce.services.cliente.ClienteService;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import java.util.ArrayList;
 import java.util.List;
 

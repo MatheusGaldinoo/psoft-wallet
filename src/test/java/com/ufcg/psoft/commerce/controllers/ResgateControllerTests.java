@@ -421,7 +421,7 @@ public class ResgateControllerTests {
                             .content(aprovacaoJson))
                     .andExpect(status().isOk());
 
-            driver.perform(post(URI_RESGATES + "/" + resgate.getId() + "/executar")
+            driver.perform(post(URI_RESGATES + "/" + resgate.getId())
                             .param("idCliente", String.valueOf(cliente.getId())))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.estado_atual").value(EstadoResgate.EM_CONTA.name()))
@@ -463,7 +463,7 @@ public class ResgateControllerTests {
                             .content(aprovacaoJson))
                     .andExpect(status().isOk());
 
-            driver.perform(post(URI_RESGATES + "/" + resgate.getId() + "/executar")
+            driver.perform(post(URI_RESGATES + "/" + resgate.getId())
                             .param("idCliente", String.valueOf(cliente2.getId())))
                     .andExpect(status().isForbidden());
         }
@@ -490,7 +490,7 @@ public class ResgateControllerTests {
 
             ResgateResponseDTO resgate = objectMapper.readValue(resgateJson, ResgateResponseDTO.class);
 
-            driver.perform(post(URI_RESGATES + "/" + resgate.getId() + "/executar")
+            driver.perform(post(URI_RESGATES + "/" + resgate.getId())
                             .param("idCliente", String.valueOf(cliente.getId())))
                     .andExpect(status().isConflict());
         }
